@@ -1,0 +1,66 @@
+<!doctype html>
+<html class="no-js" lang="">
+
+<head>
+  <meta charset="utf-8">
+  <title></title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <meta property="og:title" content="">
+  <meta property="og:type" content="">
+  <meta property="og:url" content="">
+  <meta property="og:image" content="">
+
+  <link rel="manifest" href="site.webmanifest">
+  <link rel="apple-touch-icon" href="icon.png">
+  <!-- Place favicon.ico in the root directory -->
+
+  <link rel="stylesheet" href="css/normalize.css">
+  <link rel="stylesheet" href="css/main.css">
+  <link rel="stylesheet" href="css/editor.css">
+
+  <meta name="theme-color" content="#fafafa">
+</head>
+
+<body>
+
+  <div id="editor">
+      <section id="components" class="editorAreas">
+        <div class="content">
+          <div class="title">Componentes</div>
+            <div class="component" draggable="true">
+              <div class="comp">
+                <input type="text" name="input" class="componentInput" placeholder="Componente de Input">
+              </div>
+              <div class="dragdropIcon">
+                Arraste
+              </div>
+            </div>
+        </div>
+        <div class="closeArea"></div>
+      </section>
+      <section id="viewManager">
+        <div id="controllerManager">
+          <div class="lineToAddForm">
+            <div class="comp">
+              <input type="text" name="input" class="componentInput" placeholder="Componente de Input">
+            </div>
+            <div class="comp">
+              <input type="text" name="input" class="componentInput" placeholder="Componente de Input">
+            </div>
+            <div class="dashedArea"></div>
+          </div>
+          <div class="addLine">+</div>
+        </div>
+      </section>
+  </div>
+
+  <div id="backgroundManager"></div>
+
+  <script src="js/vendor/modernizr-3.11.2.min.js"></script>
+  <script src="js/plugins.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>
