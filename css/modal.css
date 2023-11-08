@@ -1,0 +1,72 @@
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 50; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  
+  /* Modal Content/Box */
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 5px;
+    border: 1px solid #888;
+    border-radius: 5px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    display: flex;
+    justify-content: space-between;
+    flex-direction: column;
+  }
+  
+  /* The Close Button */
+  .close {
+    color: grey;
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+    width: 15px;
+    margin: 0;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .modal-header{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .btnapply{
+    margin-top: 20px;
+    height: 30px;
+    width:70px;
+    line-height: 30px;
+    text-align: center;
+    border: 1px solid #888;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: 100ms;
+  }
+
+  .btnapply:hover{
+    color: white;
+    background-color: #778;
+  }
+
+  .inp{
+    width: calc(100% - 10px);
+    margin: 5px;
+    height: 25px;
+  }
