@@ -137,6 +137,10 @@
   margin: 0;
 }
 
+.linegroup{
+  display: flex;
+}
+
 .dot{
   background-color: black;
   width: 70px;

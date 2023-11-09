@@ -13,17 +13,16 @@ let wcm = (sheetcontent.offsetWidth) / 21.0;
 let hcm = (sheetcontent.offsetHeight) / 29.7;
 let currentPage = 1;
 let lastNP = 1;
-let file = [
-  {"NP": 1,
+let file = [{
+  "NP": 1,
   sheetmargins: {
     "top": 0,
     "bottom": 0,
     "left": 0,
     "right": 0
   },
-  components: {}
-  }
-];
+  components: []
+}];
 
 file.forEach((e) => {
   if (e.NP == currentPage) {
@@ -35,30 +34,38 @@ file.forEach((e) => {
 
 configSheetArea.querySelector('.currentPage').insertAdjacentHTML('beforeend', currentPage);
 
-applyMargins(1);
+applyMargins(1, true);
 
 
 
 
 //SET CURRENT PAGE
-function setCurrentPage(np){
+function setCurrentPage(np, doScroll) {
   currentPage = np;
   listSheetsArea.querySelectorAll('.minisheet').forEach((m) => {
-    console.log(m);
     let r = m.getAttribute('rel');
 
-    if(r == np){
+    if (r == np) {
       m.classList.add('miniSheetActive');
-      m.innerHTML = 'AQUI <p>'+r+'</p>';
+      m.innerHTML = 'AQUI <p>' + r + '</p>';
     } else {
       m.classList.remove('miniSheetActive');
-      m.innerHTML = '<p>'+r+'</p>';
+      m.innerHTML = '<p>' + r + '</p>';
     }
   });
-  configSheetArea.querySelector('.currentPage').textContent = 'Página atual: '+currentPage;
-  let esheet = document.querySelector('.sheet[rel="'+np+'"]');
-  esheet.scrollIntoView({ behavior: 'smooth' });
+  configSheetArea.querySelector('.currentPage').textContent = 'Página atual: ' + currentPage;
+  let esheet = document.querySelector('.sheet[rel="' + np + '"]');
+  if (doScroll) esheet.scrollIntoView({
+    behavior: 'smooth'
+  });
 }
+
+
+
+//SCROLL ACTIONS
+
+viewManager.addEventListener('wheel', sheetpredominante);
+
 
 
 
@@ -66,31 +73,62 @@ function setCurrentPage(np){
 newPageButton.addEventListener("click", createPage);
 
 newElementButton.addEventListener("click", function (e) {
-  let c = new Celula('RELATÓRIO PRELIMINAR - VIA akad', 19, 0.6, undefined, "C", undefined, 8, "B", undefined, "", '0.04', '#FF0000', 1, undefined).draw();
-  sheetcontent.appendChild(c);
 
-  let c2 = new Celula('1-REGULADORA', 19, 0.40, undefined, "C", undefined, undefined, "B", undefined, "B", '0.04', '#FF0000', 1, undefined).draw();
-  sheetcontent.appendChild(c2);
+  let c = new Celula('RELATÓRIO PRELIMINAR - VIA akad', 19, 0.6, undefined, "C", undefined, 8, "B", undefined, "", '0.04', '#FF0000', 1, undefined);
+  addElementoToSheetHtml(c);
 
-  let c3 = new Celula('NOME', 19, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "", '0.04', '#FF0000', 1, undefined).draw();
-  sheetcontent.appendChild(c3);
+  let c2 = new Celula('1-REGULADORA', 19, 0.40, undefined, "C", undefined, undefined, "B", undefined, "B", '0.04', '#FF0000', 1, undefined);
+  addElementoToSheetHtml(c2);
 
-  let c4 = new Celula('Directa Reguladora Ltda.', 19, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "B", '0.04', '#FF0000', 1, undefined).draw();
-  sheetcontent.appendChild(c4);
+  let c3 = new Celula('NOME', 19, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "", '0.04', '#FF0000', 1, undefined);
+  addElementoToSheetHtml(c3);
 
-  
-  let c5 = new Celula('E-MAIL', 7, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "R", '0.04', '#FF0000', 0, undefined).draw();
-  sheetcontent.appendChild(c5);
+  let c4 = new Celula('Directa Reguladora Ltda.', 19, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "B", '0.04', '#FF0000', 1, undefined);
+  addElementoToSheetHtml(c4);
 
-  
-  let c6 = new Celula('CONTATO', 5, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "R", '0.04', '#FF0000', 0, undefined).draw();
-  sheetcontent.appendChild(c6);
+  let c5 = new Celula('E-MAIL', 7, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "R", '0.04', '#FF0000', 0, undefined);
+  addElementoToSheetHtml(c5);
 
-  
-  let c7 = new Celula('TELEFONE', 7, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "", '0.04', '#FF0000', 1, undefined).draw();
-  sheetcontent.appendChild(c7);
+  let c6 = new Celula('CONTATO', 5, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "R", '0.04', '#FF0000', 0, undefined);
+  addElementoToSheetHtml(c6);
+
+  let c7 = new Celula('TELEFONE', 7, 0.35, undefined, "L", undefined, undefined, undefined, undefined, "", '0.04', '#FF0000', 1, undefined);
+  addElementoToSheetHtml(c7);
 })
 
+
+
+//ADD ELEMENT TO SHEET - HTML
+function addElementoToSheetHtml(ne) {
+  let celula = ne.draw();
+  let thislast = ne['last'];
+  let indexCP = file.findIndex(item => item.NP === currentPage);
+  let lastItem = 1;
+  if (file[indexCP].components.length > 0) {
+    lastItem = file[indexCP].components.at(-1)['last'];
+  }
+  file[indexCP].components.push(ne);
+  let currentSheet = document.querySelector('.sheet[rel="' + currentPage + '"]');
+
+  if ((thislast == 0 && lastItem == 0) || (thislast == 1 && lastItem == 0)) {
+    let listlastesheet = document.querySelector('.sheet[rel="' + currentPage + '"]').querySelectorAll('.linegroup');
+    console.log(listlastesheet[listlastesheet.length - 1]);
+    let lastesheet = listlastesheet[listlastesheet.length - 1];
+    lastesheet.appendChild(celula);
+
+  } else if (thislast == 0 && lastItem == 1) {
+    
+    let linegroup = document.createElement('div');
+    linegroup.setAttribute('class', 'linegroup');
+    linegroup.appendChild(celula);
+    //currentSheet.appendChild(linegroup);
+    sheetcontent.appendChild(linegroup);
+
+  } else {
+    //currentSheet.appendChild(celula);
+    sheetcontent.appendChild(celula);
+  }
+}
 
 
 
@@ -109,7 +147,7 @@ span.onclick = function () {
 btnapply.onclick = function () {
   modal.style.display = "none";
 
-  applyMargins(1);
+  applyMargins(1, true);
 
 }
 window.onclick = function (event) {
@@ -121,7 +159,7 @@ window.onclick = function (event) {
 
 
 //MARGINS
-function applyMargins(np) {
+function applyMargins(np, all=false) {
   const iverticalMT = document.getElementById('verticalMT').value;
   const iverticalMR = document.getElementById('verticalMR').value;
   const ihorizontalME = document.getElementById('horizontalME').value;
@@ -149,16 +187,38 @@ function applyMargins(np) {
     }
   });
 
-  let indexNP = file.findIndex(item => item.NP === np);
-  file[indexNP].sheetmargins = {
-    top: (hcm * iverticalMT),
-    bottom: (hcm * iverticalMR),
-    left: (wcm * ihorizontalME),
-    right: (wcm * ihorizontalMD)
-  }
 
-  sheetcontent.style.padding = (hcm * iverticalMT)+"px "+(wcm * ihorizontalMD) +"px "+(hcm * iverticalMR)+"px "+(wcm * ihorizontalME)+"px";
+  /* if(all){
+    if(np = 1){
+      file[0].sheetmargins = {
+        top: (hcm * iverticalMT),
+        bottom: (hcm * iverticalMR),
+        left: (wcm * ihorizontalME),
+        right: (wcm * ihorizontalMD)
+      }
+    }
+  sheetcontent.style.padding = (hcm * iverticalMT) + "px " + (wcm * ihorizontalMD) + "px " + (hcm * iverticalMR) + "px " + (wcm * ihorizontalME) + "px";
+  } else {
+    let indexNP = file.findIndex(item => item.NP === np);
+    file[indexNP].sheetmargins = {
+      top: (hcm * iverticalMT),
+      bottom: (hcm * iverticalMR),
+      left: (wcm * ihorizontalME),
+      right: (wcm * ihorizontalMD)
+    }
+  }
+ */
+
+    let indexNP = file.findIndex(item => item.NP === np);
+    file[indexNP].sheetmargins = {
+      top: (hcm * iverticalMT),
+      bottom: (hcm * iverticalMR),
+      left: (wcm * ihorizontalME),
+      right: (wcm * ihorizontalMD)
+    }
+    sheetcontent.style.padding = (hcm * iverticalMT) + "px " + (wcm * ihorizontalMD) + "px " + (hcm * iverticalMR) + "px " + (wcm * ihorizontalME) + "px";
   
+
 }
 
 
@@ -168,27 +228,28 @@ function applyMargins(np) {
 //CREATE PAGE
 function createPage(e) {
 
-  file.push({"NP": ++lastNP,
-  sheetmargins: {
-    "top": 0,
-    "bottom": 0,
-    "left": 0,
-    "right": 0
-  },
-  components: {}
+  file.push({
+    "NP": ++lastNP,
+    sheetmargins: {
+      "top": 0,
+      "bottom": 0,
+      "left": 0,
+      "right": 0
+    },
+    components: []
   })
 
   let newSheet = document.createElement("div");
   newSheet.setAttribute('class', 'sheet');
   newSheet.setAttribute('rel', lastNP);
-  newSheet.addEventListener("click", function(){})
+  newSheet.addEventListener("click", function () {})
   newSheet.insertAdjacentHTML('beforeend', '<div class="mv mtop"></div><div class="mv mbottom"></div><div class="mh mleft"></div><div class="mh mright"></div> <div id="content"></div>');
   viewManager.append(newSheet);
-  applyMargins(lastNP);
+  applyMargins(lastNP, false);
 
   createMiniSheet(lastNP, false);
 
-setCurrentPage(lastNP);
+  setCurrentPage(lastNP, true);
 }
 
 
@@ -196,14 +257,33 @@ setCurrentPage(lastNP);
 
 
 //CREATE MINISHEET
-function createMiniSheet(np, active){
+function createMiniSheet(np, active) {
   if (active) {
-    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet miniSheetActive" onclick="setCurrentPage('+np+')" rel="'+np+'">AQUI <p>'+np+'</p></div>');
+    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet miniSheetActive" onclick="setCurrentPage(' + np + ', true)" rel="' + np + '">AQUI <p>' + np + '</p></div>');
   } else {
-    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet" onclick="setCurrentPage('+np+')" rel="'+np+'"><p>'+np+'</p></div>');
+    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet" onclick="setCurrentPage(' + np + ', true)" rel="' + np + '"><p>' + np + '</p></div>');
   }
 }
 
+
+
+//CHANGE PAGE WHEN SCROLL
+function sheetpredominante() {
+  const items = document.querySelectorAll('.sheet');
+  let maiorVisibilidade = 0;
+  let elementoPredominante = null;
+  items.forEach(item => {
+    const bounding = item.getBoundingClientRect();
+    const visibilidade = (bounding.top >= 0 && bounding.bottom <= window.innerHeight) ? (bounding.bottom - bounding.top) : 0;
+    if (visibilidade > maiorVisibilidade) {
+      maiorVisibilidade = visibilidade;
+      elementoPredominante = item;
+    }
+  });
+  if (elementoPredominante) {
+    setCurrentPage(elementoPredominante.getAttribute('rel'), false);
+  }
+}
 
 
 
@@ -276,9 +356,9 @@ class Celula {
     var text = document.createTextNode(this.text);
     celula.style.fontFamily = this.tfont;
 
-    let fs = hcm*(parseFloat(this.tsize)/(72/2.56));
+    let fs = hcm * (parseFloat(this.tsize) / (72 / 2.56));
     //console.log(fs+'px');
-    celula.style.fontSize = fs+'px';
+    celula.style.fontSize = fs + 'px';
 
     celula.style.textAlign = alignText[this.talign];
     celula.style.color = this.tcolor;
@@ -301,24 +381,16 @@ class Celula {
     let sidesSplit = this.border.split('');
     sidesSplit.forEach((e) => {
       let sd = sideChars[e];
-      let w = hcm*this.borderwidth;
-      celula.style[sd]=w+"px solid "+this.bordercolor;
+      let w = hcm * this.borderwidth;
+      celula.style[sd] = w + "px solid " + this.bordercolor;
     })
 
     celula.setAttribute('class', 'lines');
 
     celula.appendChild(text);
 
-    if (this.last == 0) {
-      let linegroup = document.createElement('div');
-      linegroup.setAttribute('class', 'linegroup'+1);
-      linegroup.appendChild(celula);
+    return celula;
 
-      return linegroup;
-    }
-     else {
-      return celula;
-     }
   }
 
   setBorder(sides, width, color) {
