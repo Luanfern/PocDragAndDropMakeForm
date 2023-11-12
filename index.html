@@ -17,23 +17,51 @@
 
   <div id="editor">
       <section id="menu">
-        <div id="config" class="btnMenu">Configuração</div>
-        <div id="newElement" class="btnMenu">Adicionar Elementos</div>
-        <div id="newPage" class="btnMenu">Nova Página</div>
+        
+        <div class="left">
+          <div id="pagesList" class="btnMenu">Páginas</div>
+          <di id="dropDownElements">
+            <div class="lineElementClick">
+              <div id="elements" class="btnMenu" onclick="elementsDropDown()">Elementos &#8595;</div>
+              <div id="currentElement" class="btnMenu"> - - </div>
+            </div>
+            <div id="myDropDownElements" class="myDropDownElementsContent">
+            </div>
+          </di>
+          <div id="handleElements" class="btnMenu">&#128432;</div>
+        </div>
+        <div class="center">
+          <input type="text" value="PDFDIRECTA">
+          <div id="salvarNome" class="btnMenu">&#9998;</div>
+        </div>
+        <div class="right">
+          <div id="newPage" class="btnMenu">&#43; Página</div>
+          <div id="config" class="btnMenu">&#9881;</div>
+        </div>
       </section>
       <section id="viewManager">
-        <div id="listSheets">
-          <p>Páginas:</p>
+        <div id="listElements">
+          <div class="openArea">&rarr;</div>
+          <div class="headerTopAux">
+            <div class="closeArea">&times;</div>
+            <p>Seus Elementos</p>
+          </div>
+          <div class="contentAUX">
+          </div>
+        </div>
+        <div id="listSheets" class="">
+          <div class="headerTopAux">
+            <p>Páginas</p>
+          </div>
         </div>
         <div id="configSheet">
-          <p class="currentPage">Página atual: </p>
-        </div>
-        <div class="sheet" rel="1">
-          <div class="mv mtop"></div>
-          <div class="mv mbottom"></div>
-          <div class="mh mleft"></div>
-          <div class="mh mright"></div>
-          <div class="content"></div>
+          <div class="openArea">&larr;</div>
+          <div class="headerTopAux">
+            <div class="closeArea">&times;</div>
+            <p class="currentElement">Sem Elemento...</p>
+          </div>
+          <div class="contentAUX">
+          </div>
         </div>
       </section>
   </div>
@@ -46,20 +74,21 @@
       <div class="title">CONFIGURAÇÕES</div>
       <p class="close">&times;</p>
     </div>
+    <div class="subtitle">Margem padrão</div>
     <div class="inp">
-      <span>margem TOPO:</span>
+      <span>TOPO:</span>
       <input type="number" name="verticalMT" id="verticalMT" step="0.5" max="30" value=3.5>
     </div>
     <div class="inp">
-      <span>margem RODAPÉ:</span>
+      <span>RODAPÉ:</span>
       <input type="number" name="verticalMR" id="verticalMR" step="0.5" max="30" value=1.0>
     </div>
     <div class="inp">
-      <span>margem ESQUERDA:</span>
+      <span>ESQUERDA:</span>
       <input type="number" name="horizontalME" id="horizontalME" step="0.5" max="30" value=1.0>
     </div>
     <div class="inp">
-      <span>margem DIREITA:</span>
+      <span>DIREITA:</span>
       <input type="number" name="horizontalMD" id="horizontalMD" step="0.5" max="21" value=1.0>
     </div>
     <div class="btnapply">Aplicar</div>
