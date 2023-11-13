@@ -9,14 +9,25 @@ const configSheetArea = document.querySelector("#configSheet");
 const closeAreas = document.querySelectorAll('.closeArea');
 const openAreas = document.querySelectorAll('.openArea');
 const elementsdropdown = document.querySelector('#myDropDownElements');
+const handleElements = document.querySelector('#handleElements');
 
 let defaultConfigurations = []
+
 let elementos = []
 
 let incrementPageId = 1;
 
 let currentElement = null;
-let selectedComponent = null;
+
+let selectedComponent = {
+  np: 0,
+  el: {id: 0}
+};
+
+let selectedComponentAnchorMove = {x:0,y:0};
+
+let currentAction = null;
+
 let sheets = [];
 
 window.addEventListener('load', function () {
@@ -155,6 +166,7 @@ const weightText = {
 }
 
 class Celula {
+  selfReference = null;
   id = null
   x = 0; //
   y = 0; //
@@ -196,12 +208,19 @@ class Celula {
     this.id = id;
   }
 
-  draw(r=false) {
+  draw() {
+
+    let pStats =  this.sheet.intoContentRect([{x: (this.sheet.wcm * this.x), y: (this.sheet.hcm * this.y)}, {x: (this.width+this.x)*this.sheet.wcm, y: (this.height+this.y)*this.sheet.hcm}]);
+
     let celula = document.createElement("div");
     celula.setAttribute("rel", this.id);
 
     //BACKGROUND COLOR
     celula.style.backgroundColor = this.bcolor;
+
+    //POSITION
+    celula.style.left = (this.sheet.wcm * this.x) + 'px';
+    celula.style.top = (this.sheet.hcm * this.y) + 'px';
 
     //HEIGHT - WIDTH
     celula.style.width = (this.sheet.wcm * this.width) + 'px';
@@ -240,16 +259,17 @@ class Celula {
       celula.style[sd] = w + "px solid " + this.bordercolor;
     })
 
-    celula.setAttribute('class', 'lines componentPDF');
+    celula.setAttribute('class', 'componentPDF');
 
     celula.appendChild(text);
 
-    if(r){
-      return celula;
-    }
+    this.selfReference = celula;
 
-    let currentSheet = this.sheet.getSR().querySelector('.content');
-    currentSheet.appendChild(celula);
+    if (pStats.retInto) {
+      return celula;
+    } else {
+      return null;
+    }
 
   }
 
@@ -257,13 +277,21 @@ class Celula {
   //SET PARAMETERS CALL
   setParameterComponent(value, parametro) {
     //sheet
+    let oldValues = [];
+    [parametro].forEach((pi, k) => {
+      oldValues.push(this[pi]);
+    })
+
     this.setParameters([parametro], [value]);
 
-    let d = this.draw(true);
-    let pai = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
-    let subs = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]');
-
-    pai.replaceChild(d, subs);
+    let d = this.draw();
+    if (d == null) {
+      this.setParameters([parametro], oldValues);
+    } else {
+      let pai = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
+      let subs = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]');
+      pai.replaceChild(d, subs);
+    }
   }
 
   addConnection(type, rels, comp){
@@ -291,6 +319,10 @@ class Celula {
 
     this.updateConnectionsINF();
   }
+
+  getSR() {
+    return this.selfReference;
+  }
 }
 
 
@@ -308,6 +340,8 @@ class SHEET {
     "right": 0
   };
   components = [];
+  rectConstruct = [];
+  inClick = false;
   constructor(id, margem = {
     "top": 1,
     "bottom": 1,
@@ -319,6 +353,8 @@ class SHEET {
     this.margem = margem;
     this.wcm = 2.65 * 210 / this.width;
     this.hcm = 2.65 * 297 / this.height;
+    this.rectConstruct = [];
+    this.inClick = false;
   }
 
 
@@ -328,7 +364,7 @@ class SHEET {
     newSheet.setAttribute('class', 'sheet');
     newSheet.setAttribute('rel', this.id);
     newSheet.addEventListener("click", function () {})
-    newSheet.insertAdjacentHTML('beforeend', '<div class="addelementTip"><div><b>X (CM):</b><div class="coordXSheet"></div></div><div><b>Y (CM):</b><div class="coordYSheet"></div></div></div><div class="mv mtop"></div><div class="mv mbottom"></div><div class="mh mleft"></div><div class="mh mright"></div> <div class="content"></div>');
+    newSheet.insertAdjacentHTML('beforeend', '<div class="addelementTip"><div><b>X (CM):</b><div class="coordXSheet"></div></div> &nbsp;&nbsp;|&nbsp;&nbsp; <div><b>Y (CM):</b><div class="coordYSheet"></div></div></div><div class="mv mtop"></div><div class="mv mbottom"></div><div class="mh mleft"></div><div class="mh mright"></div> <div class="content"></div>');
     viewManager.append(newSheet);
 
     this.selfReference = newSheet;
@@ -389,28 +425,70 @@ class SHEET {
   clickDropElementsSheet() {
     let paiRef = this;
     let content = this.selfReference.querySelector('.content');
+    let selectAreaMouse = document.createElement('div');
+    selectAreaMouse.setAttribute('class', 'selectAreaMouse');
 
     content.addEventListener('mousedown', function (e) {
-      let indexEl = elementos.findIndex(item => item.id === Number(currentElement));
-      if (currentElement == null) {
-        alert('nenhum elemento selecionado!');
-      } else {
-        let componentToCreate;
+      paiRef.inClick = true;
+      if(currentAction == 'HANDLE'){
+        const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
+        if (isFilho) {
+          let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
+         selectComponent(paiRef.id, el);
+         const rect = selectedComponent.el.getSR().getBoundingClientRect();
+          const mouseX = e.clientX - rect.left;
+          const mouseY = e.clientY - rect.top;
+
+          console.log(`Posição do mouse em relação ao elemento: x = ${mouseX}, y = ${mouseY}`);
+         selectedComponentAnchorMove = {x: mouseX, y: mouseY};
+        }
+      }else {
+        if (currentElement == null && currentAction == null) {
+          alert('nenhum elemento selecionado!');
+        } else {
+          switch (e.button) {
+            case 0:
+              var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
+              var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
+              content.append(selectAreaMouse);
+              selectAreaMouse.style.top = mouseY+'px';
+              selectAreaMouse.style.left = mouseX+'px';
+              selectAreaMouse.style.width ='0px';
+              selectAreaMouse.style.height ='0px';
+              paiRef.rectConstruct.push({x: mouseX, y: mouseY});
+              break;
+          }
+        }
+      }
+    });
+
+    content.addEventListener('mouseup', function (e) {
+      if(paiRef.inClick && currentAction == 'HANDLE'){
+        selectedComponentAnchorMove = {x:0, y:0};
+        paiRef.inClick = false;
+      }
+      if(paiRef.inClick && currentAction == 'CREATE'){
+        content.removeChild(selectAreaMouse);
+        paiRef.inClick = false;
+        var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
+        var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
+        paiRef.rectConstruct.push({x: mouseX, y: mouseY});
+
         let insertID = 1;
         if(paiRef.components.length > 0){
           insertID = paiRef.components.at(-1).id+1;
         }
-        switch (e.button) {
-          case 2:
-            let maxLarge = width - (paiRef.margem.left / paiRef.wcm) - (paiRef.margem.right / paiRef.wcm);
-            componentToCreate = new elementos[indexEl].class(paiRef, insertID, undefined, 0, 0, maxLarge, 0.40, undefined, "C", undefined, undefined, "B", undefined, "B", 0.04, '#FF0000', 1, undefined);
-            paiRef.addElementoToSheetHtml(componentToCreate);
-            break;
-          case 0:
-            componentToCreate = new elementos[indexEl].class(paiRef, insertID, undefined, 0, 0, 2, 0.40, undefined, "C", undefined, undefined, "B", undefined, "B", 0.04, '#FF0000', 1, undefined);
-            paiRef.addElementoToSheetHtml(componentToCreate);
-            break;
-        }
+
+        let w = (paiRef.rectConstruct[1].x - paiRef.rectConstruct[0].x) / paiRef.wcm;
+        let h = (paiRef.rectConstruct[1].y - paiRef.rectConstruct[0].y) / paiRef.hcm;
+        let x = paiRef.rectConstruct[0].x / paiRef.wcm;
+        let y = paiRef.rectConstruct[0].y / paiRef.hcm;
+        
+        let indexEl = elementos.findIndex(item => item.id === Number(currentElement));
+        let componentToCreate = new elementos[indexEl].class(paiRef, insertID, undefined, x, y, w, h, undefined, "C", undefined, undefined, "B", undefined, "B", 0.04, '#FF0000', 1, undefined);
+        paiRef.addElementoToSheetHtml(componentToCreate);
+
+        paiRef.rectConstruct = [];
       }
     });
 
@@ -418,17 +496,89 @@ class SHEET {
       let tip = paiRef.selfReference.querySelector('.addelementTip');
       var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
       var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
+      if(paiRef.inClick && currentAction == 'CREATE'){
+        //console.log('X: '+(mouseX - paiRef.rectConstruct[0].x)+'px , Y: '+(mouseY - paiRef.rectConstruct[0].y)+'px');
+        selectAreaMouse.style.width = mouseX - paiRef.rectConstruct[0].x + 'px';
+        selectAreaMouse.style.height = mouseY - paiRef.rectConstruct[0].y + 'px';
+      }
       tip.querySelector('.coordXSheet').innerHTML = ((mouseX) / paiRef.wcm).toFixed(1);
       tip.querySelector('.coordYSheet').innerHTML = ((mouseY) / paiRef.hcm).toFixed(1);
+
+      if(paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el.id != 0){
+        let nx = -1*((/* (selectedComponent.el.x) - */ (selectedComponentAnchorMove.x / paiRef.wcm)) + ((mouseX) / paiRef.wcm));
+        let ny = -1*((/* (selectedComponent.el.y) - */ (selectedComponentAnchorMove.y / paiRef.hcm)) + ((mouseY) / paiRef.hcm));
+        console.log(nx, ny);
+        selectedComponent.el.setParameterComponent(nx, 'x');
+        selectedComponent.el.setParameterComponent(ny, 'y');
+      }
     });
+
+    content.addEventListener('mouseover', function(e) {
+      if(currentAction == 'HANDLE'){
+        const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
+        if (isFilho) {
+          e.target.classList.add('highlight');
+          e.target.classList.remove('NOhighlight');
+        }
+      }
+    });
+
+    content.addEventListener('mouseout', (e) => {
+      if(currentAction == 'HANDLE'){
+        // Verifica se o alvo do evento é um filho do paiElemento
+        const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
+        if (isFilho) {
+          if(selectedComponent.el.id != e.target.getAttribute('rel')){
+            e.target.classList.add('NOhighlight');
+            e.target.classList.remove('highlight');
+          } 
+        }
+      }
+    });
+  }
+
+  //POSITION COMPONENTS DATA
+  intoContentRect(mxy){
+
+    //console.log(mxy);
+
+    let l = this.margem.left;
+    let t = this.margem.top;
+    let r = this.getSR().getBoundingClientRect().width - this.margem.right;
+    let b = this.getSR().getBoundingClientRect().height - this.margem.bottom;
+
+    let retInto = true;
+    let retClick = false;
+
+    mxy.forEach((p) => {
+      let mx = p.x;
+      let my = p.y;
+      if((mx < l || mx > r || my < t || my > b) && retInto == true){
+        retInto = false;
+      }
+    });
+
+    for (let i = -10; i <= 10; i++) {
+      for (let ii = -10; ii <= 10; ii++) {
+        if ((mxy[0].y + ii === mxy[1].y) && (mxy[0].x + i === mxy[1].x)) {
+          retClick = true;
+        }
+      }
+    }
+
+    return {retInto: retInto, retClick, retClick};
   }
 
 
   //ADD ELEMENT TO SHEET - HTML
   addElementoToSheetHtml(ne) {
-    ne.draw();
-    this.components.push(ne);
-    addToMyElements(ne, this.id);
+    let celula = ne.draw();
+    if(celula != null) {
+      let currentSheet = this.getSR().querySelector('.content');
+      currentSheet.appendChild(celula);
+      this.components.push(ne);
+      addToMyElements(ne, this.id);
+    }
   }
 
 
@@ -464,10 +614,14 @@ class SHEET {
 
     let content = this.getSR().querySelector('.content');
     content.style.padding = this.margem.top + "px " + this.margem.right + "px " + this.margem.bottom + "px " + this.margem.left + "px;";
-    Array.from(content.querySelectorAll('.linegroup')).forEach(lg => {
-      lg.setAttribute('totalW', this.width - this.margem.left - this.margem.right);
-
-    })
+  
+    this.margem = {
+      "top": (this.hcm * top)+1,
+      "bottom": (this.hcm * bottom)+1,
+      "left": (this.wcm * left)+1,
+      "right": (this.wcm * right)+1
+    };
+  
   }
 
 
@@ -588,7 +742,7 @@ function addToMyElements(el, np) {
 function selectComponent(np, el) {
   selectedComponent = {
     np: np,
-    id: el.id
+    el: el
   }
   configSheetArea.querySelector('.currentElement').textContent = el.text;
   createFormFromElement(el)
@@ -613,11 +767,18 @@ function createFormFromElement(e) {
 
     let inpAreaInput = document.createElement('input');
     inpAreaInput.setAttribute('type', value.type);
+    if (value.type == 'number') {
+      inpAreaInput.setAttribute('step', '0.05');
+    }
     inpAreaInput.setAttribute('value', e[key]);
-    inpArea.setAttribute('rel', key);
+    inpAreaInput.setAttribute('rel', key);
     
     inpAreaInput.addEventListener('change', function(ri){
-      e.setParameterComponent(inpAreaInput.value, key);
+      let vr = inpAreaInput.value;
+      if (value.type == 'number') {
+        vr = parseFloat(inpAreaInput.value);
+      }
+      e.setParameterComponent(vr, key);
     })
 
     e.addConnection('input', [key], inpAreaInput);
@@ -628,6 +789,26 @@ function createFormFromElement(e) {
 
     //content += '<div class="inpConfig" rel="' + e.id + '"><span>' + value.label + '</span><input type="' + value.type + '" value="' + e.c[key] + '"  onchange="setParameterComponent(this.value, \'' + key + '\', ' + e.id + ')"></div>';
   }
+
+  //LISTENNER OF AUX CONFIG CHANGES - delete inputs
+/* 
+  //no pai do que pretende escutar as alterações
+  const targetNode = configSheetArea.querySelector('.contentAUX'); 
+  const config = { childList: true, subtree: true};
+  const observer = new MutationObserver(function(mutationsList) {
+    for (let mutation of mutationsList) { //para cada uma das alterações no DOM
+      if (mutation.type == 'childList') { //se afeta os filhos
+        if(mutation.removedNodes.length > 0)
+        mutation.removedNodes
+        const removedIds = [...mutation.removedNodes].map(x => x.id); //apanhar os id's
+        if (removedIds.includes("teste")){ //se o id existe é porque foi removido
+          console.log("teste removido");
+        }
+      }
+    }
+  }); 
+  
+  observer.observe(targetNode, config); */
 }
 
 
@@ -641,6 +822,18 @@ viewManager.addEventListener('wheel', sheetpredominante);
 
 
 //BTN ACTIONS 
+handleElements.addEventListener('click', function(e) {
+  let esis = document.querySelectorAll('.sheet');
+  esis.forEach((s) => {
+    s.classList.add('gragItems');
+    s.querySelectorAll('.componentPDF').forEach(c => {
+      c.classList.add('NOhighlight');
+    })
+  })
+  currentAction = 'HANDLE';
+  currentElement = null;
+});
+
 pagesListButton.addEventListener('click', function (e) {
   listSheetsArea.classList.toggle("show");
 });
@@ -650,11 +843,23 @@ function elementsDropDown() {
 };
 
 function selectedAddElement(e) {
+  document.querySelectorAll('.sheet').forEach(s => {
+    s.classList.remove('gragItems');
+  })
   let id = e.getAttribute('rel');
   let indexEl = elementos.findIndex(item => item.id === Number(id));
 
   document.querySelector('#currentElement').innerHTML = elementos[indexEl].nome;
   currentElement = elementos[indexEl].id;
+  currentAction = 'CREATE';
+  let esis = document.querySelectorAll('.sheet');
+  esis.forEach((s) => {
+    s.classList.remove('gragItems');
+    s.querySelectorAll('.componentPDF').forEach(c => {
+      c.classList.remove('NOhighlight');
+      c.classList.remove('highlight');
+    })
+  })
   elementsDropDown();
 }
 
