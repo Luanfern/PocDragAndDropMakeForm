@@ -24,7 +24,7 @@ let selectedComponent = {
   el: {id: 0}
 };
 
-let selectedComponentAnchorMove = {x:0,y:0};
+let selectedComponentAnchorMove = null;
 
 let currentAction = null;
 
@@ -231,7 +231,6 @@ class Celula {
     celula.style.fontFamily = this.tfont;
 
     let fs = this.sheet.hcm * (parseFloat(this.tsize) / (72 / 2.56));
-    //console.log(fs+'px');
     celula.style.fontSize = fs + 'px';
 
     celula.style.textAlign = alignText[this.talign];
@@ -282,7 +281,11 @@ class Celula {
       oldValues.push(this[pi]);
     })
 
-    this.setParameters([parametro], [value]);
+    if(!isNaN(value)){
+    this.setParameters([parametro], [parseFloat(value.toFixed(2))]);
+    } else {
+      this.setParameters([parametro], [value]);
+    }
 
     let d = this.draw();
     if (d == null) {
@@ -322,6 +325,53 @@ class Celula {
 
   getSR() {
     return this.selfReference;
+  }
+
+  changeOrder(c){
+    let selfIndex = this.sheet.components.findIndex(i => i.id == this.id);
+
+    if(c == 'up'){
+      try {
+        let nxt = this.sheet.components[selfIndex+1];
+        if(nxt == null) return false;
+
+        let tonxt = this.getSR().parentElement.querySelector('div.componentPDF[rel="'+nxt.id+'"]');
+        let tis = this.getSR().parentElement.querySelector('div.componentPDF[rel="'+this.id+'"]');
+        tis.parentElement.insertBefore(tonxt, tis);
+
+        this.sheet.components[selfIndex+1] = this.sheet.components[selfIndex];
+        this.sheet.components[selfIndex] = nxt;
+      } catch (error) {
+        console.log(error);
+      }
+
+    }
+    if(c == 'down'){
+      try {
+        let nxt = this.sheet.components[selfIndex-1];
+        if(nxt == null) return false;
+
+        let tonxt = this.getSR().parentElement.querySelector('div.componentPDF[rel="'+nxt.id+'"]');
+        let tis = this.getSR().parentElement.querySelector('div.componentPDF[rel="'+this.id+'"]');
+        tonxt.parentElement.insertBefore(tis, tonxt);
+
+        this.sheet.components[selfIndex-1] = this.sheet.components[selfIndex];
+        this.sheet.components[selfIndex] = nxt;
+      } catch (error) {
+        console.log(error);
+      }
+
+    }
+  }
+
+  deleteMe(){
+    try {
+      this.sheet.components.splice(this.id, 1);
+      this.getSR().parentElement.removeChild(this.getSR());
+      return true;
+    } catch (error) {
+      return false
+    }
   }
 }
 
@@ -435,11 +485,10 @@ class SHEET {
         if (isFilho) {
           let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
          selectComponent(paiRef.id, el);
-         const rect = selectedComponent.el.getSR().getBoundingClientRect();
+         const rect = el.getSR().getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
           const mouseY = e.clientY - rect.top;
 
-          console.log(`Posição do mouse em relação ao elemento: x = ${mouseX}, y = ${mouseY}`);
          selectedComponentAnchorMove = {x: mouseX, y: mouseY};
         }
       }else {
@@ -464,7 +513,7 @@ class SHEET {
 
     content.addEventListener('mouseup', function (e) {
       if(paiRef.inClick && currentAction == 'HANDLE'){
-        selectedComponentAnchorMove = {x:0, y:0};
+        selectedComponentAnchorMove = null;
         paiRef.inClick = false;
       }
       if(paiRef.inClick && currentAction == 'CREATE'){
@@ -496,20 +545,18 @@ class SHEET {
       let tip = paiRef.selfReference.querySelector('.addelementTip');
       var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
       var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
-      if(paiRef.inClick && currentAction == 'CREATE'){
-        //console.log('X: '+(mouseX - paiRef.rectConstruct[0].x)+'px , Y: '+(mouseY - paiRef.rectConstruct[0].y)+'px');
+      if(paiRef.inClick && currentAction == 'CREATE' && paiRef.rectConstruct != []){
         selectAreaMouse.style.width = mouseX - paiRef.rectConstruct[0].x + 'px';
         selectAreaMouse.style.height = mouseY - paiRef.rectConstruct[0].y + 'px';
       }
       tip.querySelector('.coordXSheet').innerHTML = ((mouseX) / paiRef.wcm).toFixed(1);
       tip.querySelector('.coordYSheet').innerHTML = ((mouseY) / paiRef.hcm).toFixed(1);
 
-      if(paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el.id != 0){
-        let nx = -1*((/* (selectedComponent.el.x) - */ (selectedComponentAnchorMove.x / paiRef.wcm)) + ((mouseX) / paiRef.wcm));
-        let ny = -1*((/* (selectedComponent.el.y) - */ (selectedComponentAnchorMove.y / paiRef.hcm)) + ((mouseY) / paiRef.hcm));
-        console.log(nx, ny);
-        selectedComponent.el.setParameterComponent(nx, 'x');
-        selectedComponent.el.setParameterComponent(ny, 'y');
+      if(paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el.id != 0 && selectedComponentAnchorMove != null){
+        let nx = (((mouseX) / paiRef.wcm) - ((selectedComponentAnchorMove.x / paiRef.wcm)));
+        let ny = (((mouseY) / paiRef.hcm) - ((selectedComponentAnchorMove.y / paiRef.hcm)));
+        selectedComponent.el.setParameterComponent(parseFloat(nx), 'x');
+        selectedComponent.el.setParameterComponent(parseFloat(ny), 'y');
       }
     });
 
@@ -539,9 +586,6 @@ class SHEET {
 
   //POSITION COMPONENTS DATA
   intoContentRect(mxy){
-
-    //console.log(mxy);
-
     let l = this.margem.left;
     let t = this.margem.top;
     let r = this.getSR().getBoundingClientRect().width - this.margem.right;
@@ -616,10 +660,10 @@ class SHEET {
     content.style.padding = this.margem.top + "px " + this.margem.right + "px " + this.margem.bottom + "px " + this.margem.left + "px;";
   
     this.margem = {
-      "top": (this.hcm * top)+1,
-      "bottom": (this.hcm * bottom)+1,
-      "left": (this.wcm * left)+1,
-      "right": (this.wcm * right)+1
+      "top": (this.hcm * top)-0.1,
+      "bottom": (this.hcm * bottom)-0.1,
+      "left": (this.wcm * left)-0.1,
+      "right": (this.wcm * right)-0.1
     };
   
   }
@@ -725,16 +769,100 @@ function addToMyElements(el, np) {
   me.setAttribute('rel', el.id);
   me.setAttribute('class', 'myElement');
   let content = '<div class="icon"></div><span rel="text" class="name">' + el.text + '</span>';
+
+  let lc = document.createElement('div');
+  lc.setAttribute('class', 'layerControlComponent');
+
+  let clcu = document.createElement('div');
+  clcu.setAttribute('class', 'up');
+  clcu.innerHTML = '&uarr;';
+
+  let clcd = document.createElement('div');
+  clcd.setAttribute('class', 'down');
+  clcd.innerHTML = '&darr;';
+
+  let confShow = document.createElement('div');
+  confShow.setAttribute('class', 'confShow');
+
+  let cnfCompContent = document.createElement('div');
+  cnfCompContent.setAttribute('class', 'cnfCompContent');
+
+  let deleteComp = document.createElement('div');
+  deleteComp.setAttribute('class', 'deleteComp');
+  deleteComp.insertAdjacentText('beforeend', 'Deletar');
+
+  confShow.insertAdjacentHTML('beforeend', '&#9881;');
+  confShow.insertAdjacentElement('beforeend', cnfCompContent);
+  cnfCompContent.insertAdjacentElement('beforeend', deleteComp);
+
+  lc.append(clcu);
+  lc.append(clcd);
+
   me.insertAdjacentHTML('beforeend', content);
+  me.insertAdjacentElement('beforeend', lc);
+  me.insertAdjacentElement('beforeend', confShow);
 
   let p = listElementsArea.querySelector('.contentAUX').querySelector('.pageAccordeon[rel="' + np + '"]').querySelector('.pagePanelAcordeon');
-  p.insertAdjacentElement('beforeend', me);
+  p.insertAdjacentElement('afterbegin', me);
 
   el.addConnection('text', ['text'], me);
+
+  deleteComp.addEventListener('click', function(e) {
+    event.stopPropagation();
+    if (confirm("Deseja excluir o componente "+el.text+" ?") == true) {
+      if(el.deleteMe()){
+        me.parentNode.removeChild(me);
+        if(configSheetArea.querySelectorAll('.contentAUX .inpConfig')[0].getAttribute('rel') == el.id){
+          console.log(configSheetArea.querySelector('.contentAUX').innerHTML);
+          configSheetArea.querySelector('.currentElement').textContent = 'Sem Elemento...';
+          configSheetArea.querySelector('.contentAUX').innerHTML = '';
+        }
+      }
+      
+    }
+  })
+
+  confShow.addEventListener('click', function(e) {
+    confShow.classList.toggle('active');
+  })
+
+  clcu.addEventListener('click', function (e) {
+    let noe = me;
+    let pvs = me.previousElementSibling;    
+
+    if (pvs) {
+      el.changeOrder('up');
+      pvs.parentElement.insertBefore(noe, pvs);
+    }
+  })
+
+  clcd.addEventListener('click', function (e) {
+    let noe = me;
+    let nxt = me.nextElementSibling;
+
+    if (nxt) {
+      el.changeOrder('down');
+      noe.parentElement.insertBefore(nxt, noe);
+    }
+  })
 
   me.addEventListener('click', function (e) {
     selectComponent(np, el);
   })
+
+  me.addEventListener('mouseover', function(e) {
+    if(currentAction == 'HANDLE'){
+      el.getSR().classList.add('highlight');
+      el.getSR().classList.remove('NOhighlight');    
+    }
+  });
+
+  me.addEventListener('mouseout', (e) => {
+    if(currentAction == 'HANDLE'){
+      el.getSR().classList.remove('highlight');
+      el.getSR().classList.add('NOhighlight');       
+    }
+  });
 }
 
 
@@ -745,6 +873,13 @@ function selectComponent(np, el) {
     el: el
   }
   configSheetArea.querySelector('.currentElement').textContent = el.text;
+  Array.from(listElementsArea.querySelectorAll('.contentAUX .pageAccordeon[rel="' + np + '"] .pagePanelAcordeon .myElement')).forEach(accds => {
+    if(accds.getAttribute('rel') == el.id){
+      accds.classList.add('active');
+    } else {
+      accds.classList.remove('active');
+    }
+  })
   createFormFromElement(el)
 }
 
