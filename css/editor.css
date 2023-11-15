@@ -246,7 +246,9 @@ text-align: center;
 
 #zoomActions .zoomValue{
   border-top: 1px solid rgba(0,0,0,0.35);
-  text-align: center;
+  padding-left: 5px;
+  padding-right: 5px;
+  overflow: hidden;
   padding-top:2px;
   width: 50px;
   position: fixed;
@@ -280,12 +282,14 @@ text-align: center;
   padding:5px;
   width:35px;
   height:35px;
+  display: flex;
   text-align: center;
 }
 
 #zoomActions .controls div:hover{
   background-color: rgba(0,0,0,0.15);
   font-size:16px;
+  cursor: pointer;
 }
 
 .minisheet{
@@ -333,7 +337,7 @@ text-align: center;
 .closeArea:hover{
   color: #666;
   font-size: 26px;
-
+  cursor: pointer;
 }
 
 .openArea{

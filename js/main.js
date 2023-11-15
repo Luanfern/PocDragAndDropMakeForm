@@ -9,9 +9,12 @@ const configSheetArea = document.querySelector("#configSheet");
 const closeAreas = document.querySelectorAll('.closeArea');
 const openAreas = document.querySelectorAll('.openArea');
 const elementsdropdown = document.querySelector('#myDropDownElements');
-const handleElements = document.querySelector('#handleElements');
+const zoomActions = document.querySelector('#zoomActions');
 
-let defaultConfigurations = []
+let defaultConfigurations = {
+  zoom: {x: 210, y:297},
+  zoomPctg: 1.0
+}
 
 let elementos = []
 
@@ -291,10 +294,14 @@ class Celula {
     if (d == null) {
       this.setParameters([parametro], oldValues);
     } else {
-      let pai = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
+      this.reDraw(d);
+    }
+  }
+
+  reDraw(d){
+    let pai = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
       let subs = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]');
       pai.replaceChild(d, subs);
-    }
   }
 
   addConnection(type, rels, comp){
@@ -401,8 +408,8 @@ class SHEET {
     this.id = id;
     this.components = components;
     this.margem = margem;
-    this.wcm = 2.65 * 210 / this.width;
-    this.hcm = 2.65 * 297 / this.height;
+    this.wcm = 2.65 * defaultConfigurations.zoom.x / this.width;
+    this.hcm = 2.65 * defaultConfigurations.zoom.y / this.height;
     this.rectConstruct = [];
     this.inClick = false;
   }
@@ -434,6 +441,39 @@ class SHEET {
   //CREATE MINISHEET
   createMiniSheet() {
     listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet" onclick="setCurrentPage(' + this.id + ', true, true)" rel="' + this.id + '"><p>' + this.id + '</p></div>');
+  }
+
+  setSizeSheet(pctg){
+    let x = (defaultConfigurations.zoom.x * pctg);
+    let y = (defaultConfigurations.zoom.y * pctg);
+
+        // Get the element
+    var element = this.getSR();
+
+    // Update the width and height values in the inline style
+    element.style.width = 'calc(2.65 * ' + x + 'px)';
+    element.style.height = 'calc(2.65 * ' + y + 'px)';
+
+    let m = {
+      t: (this.margem.top+0.1)/this.hcm,
+      b: (this.margem.bottom+0.1)/this.hcm,
+      l: (this.margem.left+0.1)/this.wcm,
+      r: (this.margem.right+0.1)/this.wcm
+    }
+
+    this.wcm = 2.65 * x / this.width;
+    this.hcm = 2.65 * y / this.height;
+
+
+    this.setMargem(m.t, m.b, m.l, m.r);
+
+    this.reDrawElements();
+  }
+
+  reDrawElements(){
+    this.components.forEach(c => {
+      c.reDraw(c.draw());
+    });
   }
 
   //CREATE PAGE ACCORDION
@@ -957,6 +997,25 @@ viewManager.addEventListener('wheel', sheetpredominante);
 
 
 //BTN ACTIONS 
+
+zoomActions.querySelector('.moreZoom').addEventListener('click', function(e) {
+  let z = parseFloat((defaultConfigurations.zoomPctg+0.1));
+  defaultConfigurations.zoomPctg = z;
+  zoomActions.querySelector('.zoomValue').innerHTML = (z*100)+'%';
+  sheets.forEach(s => {
+    s.setSizeSheet(z);
+  });
+});
+
+zoomActions.querySelector('.lessZoom').addEventListener('click', function(e) {
+  let z = (defaultConfigurations.zoomPctg-0.1);
+  defaultConfigurations.zoomPctg = z;
+  zoomActions.querySelector('.zoomValue').innerHTML = (z*100)+'%';
+  sheets.forEach(s => {
+    s.setSizeSheet(z);
+  });
+});
+
 handleElements.addEventListener('click', function(e) {
   let esis = document.querySelectorAll('.sheet');
   esis.forEach((s) => {
