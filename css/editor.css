@@ -494,6 +494,20 @@ text-align: center;
   border-radius: 3px;
 }
 
+.cnfCompContent .configComp{
+  transition: 100ms;
+  background-color: none;
+  padding: 0 6px;
+  font-weight: bold;
+  font-size: 11px;
+}
+
+.cnfCompContent .configComp:hover{
+  background-color: white;
+  color: black;
+  border-radius: 3px;
+}
+
 .confShow:hover{
   width: 15px;
   background-color: #222;

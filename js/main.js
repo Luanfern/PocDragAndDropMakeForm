@@ -13,8 +13,16 @@ const zoomActions = document.querySelector('#zoomActions');
 
 let defaultConfigurations = {
   zoom: {x: 210, y:297},
-  zoomPctg: 1.0
+  zoomPctg: 1.0,
+  margens: {
+    "top": 3,
+    "bottom": 1,
+    "left": 1,
+    "right": 1
+  }
 }
+
+modalConfId = null;
 
 let elementos = []
 
@@ -434,6 +442,10 @@ class SHEET {
     this.createAccordeonSheet();
 
     console.log('ADICIONANDO PÁGINA: ' + this.id)
+
+    if(document.querySelector('.nosheetsExist')){
+      document.querySelector('.nosheetsExist').parentElement.removeChild(document.querySelector('.nosheetsExist'));
+    }
   }
 
 
@@ -738,6 +750,8 @@ function setCurrentPage(sheetClassId, doScroll, clickMiniPage = false) {
     });
   }
   if (clickMiniPage) {
+    modalConfId = sheetClassId;
+    openModal(false, sheetClassId)
     listSheetsArea.classList.toggle("show");
   }
 }
@@ -747,16 +761,42 @@ var modal = document.getElementById("myModal");
 var configbtn = document.getElementById("config");
 var span = document.getElementsByClassName("close")[0];
 var btnapply = document.getElementsByClassName("btnapply")[0];
-configbtn.onclick = function () {
+configbtn.addEventListener('click', function(e) {
+  openModal(true);
+});
+
+function openModal(g=true, sheetClassId=null) {
+  if (g) {
+    document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
+    document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
+    document.getElementById('horizontalME').value  = defaultConfigurations.margens.left;
+    document.getElementById('horizontalMD').value  = defaultConfigurations.margens.right;
+  } else {
+    let s = sheets[sheets.findIndex(i => i.id == sheetClassId)];
+    document.getElementById('verticalMT').value = s.margem.top/s.hcm;
+    document.getElementById('verticalMR').value = s.margem.bottom/s.hcm;
+    document.getElementById('horizontalME').value  = s.margem.left/s.wcm;
+    document.getElementById('horizontalMD').value  = s.margem.right/s.wcm;
+  }
   modal.style.display = "block";
 }
 span.onclick = function () {
   modal.style.display = "none";
+  modalConfId = null;
+  document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
+  document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
+  document.getElementById('horizontalME').value  = defaultConfigurations.margens.left;
+  document.getElementById('horizontalMD').value  = defaultConfigurations.margens.right;
 }
 btnapply.onclick = function () {
   modal.style.display = "none";
 
-  applyMargins(0, true);
+  applyMargins(modalConfId, modalConfId == null ? true : false);
+  modalConfId = null;
+  document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
+  document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
+  document.getElementById('horizontalME').value  = defaultConfigurations.margens.left;
+  document.getElementById('horizontalMD').value  = defaultConfigurations.margens.right;
 
 }
 window.onclick = function (event) {
@@ -831,9 +871,14 @@ function addToMyElements(el, np) {
   deleteComp.setAttribute('class', 'deleteComp');
   deleteComp.insertAdjacentText('beforeend', 'Deletar');
 
-  confShow.insertAdjacentHTML('beforeend', '&#9881;');
+  let configComp = document.createElement('div');
+  configComp.setAttribute('class', 'configComp');
+  configComp.insertAdjacentText('beforeend', 'Configuração');
+
+  confShow.insertAdjacentHTML('beforeend', '|');
   confShow.insertAdjacentElement('beforeend', cnfCompContent);
   cnfCompContent.insertAdjacentElement('beforeend', deleteComp);
+  cnfCompContent.insertAdjacentElement('beforeend', configComp);
 
   lc.append(clcu);
   lc.append(clcd);
@@ -848,7 +893,7 @@ function addToMyElements(el, np) {
   el.addConnection('text', ['text'], me);
 
   deleteComp.addEventListener('click', function(e) {
-    event.stopPropagation();
+    e.stopPropagation();
     if (confirm("Deseja excluir o componente "+el.text+" ?") == true) {
       if(el.deleteMe()){
         me.parentNode.removeChild(me);
@@ -860,6 +905,10 @@ function addToMyElements(el, np) {
       }
       
     }
+  })
+  
+  configComp.addEventListener('click', function(e) {
+    e.stopPropagation();
   })
 
   confShow.addEventListener('click', function(e) {
