@@ -176,6 +176,7 @@ text-align: center;
 }
 
 .sheet{
+  user-select: none;
   margin-top: 30px;
   margin-bottom: 10px;
   width: calc(2.65*210px);
@@ -188,6 +189,12 @@ text-align: center;
 
 .sheet.gragItems{
   cursor: grab !important;
+}
+
+.headerTopAux .currentElement{
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 #configSheet{
@@ -231,6 +238,21 @@ text-align: center;
   overflow-y: auto;
   transition: 100ms;
   display: none;
+}
+
+.excluirPagina{
+  transition: 100ms;
+  background-color: none;
+  padding: 8px 12px;
+  font-weight: bold;
+  font-size: 12px;
+  color: black;
+}
+
+.excluirPagina:hover{
+  background-color: red;
+  color: white;
+  border-radius: 3px;
 }
 
 #zoomActions .controls{
@@ -292,6 +314,16 @@ text-align: center;
   cursor: pointer;
 }
 
+.minisheet .contentMiniSheet{
+  color: black;
+  font-weight: bold;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-evenly;
+  align-items: center;
+  height: calc(100% - 30px);
+}
+
 .minisheet{
   margin-top: 15px;
   width: calc(210px/2.65);
@@ -300,11 +332,10 @@ text-align: center;
   box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
   position: relative;
   border: 1px solid rgba(0,0,0,0.1);
-  color: black;
   font-weight: bold;
   display: flex;
   flex-direction: column;
-  justify-content: space-evenly;
+  justify-content: space-between;
   align-items: center;
 }
 
@@ -360,6 +391,8 @@ text-align: center;
   margin: 5px 0;
   display: flex;
   flex-direction: column;
+  overflow: scroll;
+  margin-bottom: 30px;  
 }
 
 .pageAccordeon{
@@ -523,28 +556,6 @@ text-align: center;
   display: flex;
 }
 
-.inpConfig{
-  display: flex;
-  flex-direction: column;
-  align-items: flex-start;
-  justify-content: flex-start; 
-  margin: 8px 5px 5px 5px;
-}
-
-.inpConfig span{
-  width:100%;
-  margin-bottom: 2px;
-  font-size: 12px;
-  font-weight: bold;
-  text-transform: uppercase;
-}
-
-.inpConfig input{
-  width:100%;
-  font-size: 12px;
-}
-
-
 .avaiableElements{
   margin-bottom: 8px;
   width: 100%;
@@ -608,12 +619,13 @@ text-align: center;
 }
 
 .componentPDF.NOhighlight{
+  border: 1px dashed #777;
   z-index: 1;
   opacity: 0.6;
 }
 
 .componentPDF.highlight{
-  border: 1.5px dashed #777;
+  border: 1px dashed #777;
   z-index: 10;
 }
 
@@ -663,6 +675,28 @@ text-align: center;
   font-size: 8px;
   overflow: hidden;
 }
+
+.addelementTip.right{
+  right: 0px;
+}
+
+.classificacaoSheet{
+  position: absolute;
+  width: 130px;
+  height: 18px;
+  top: -20px;
+  right: 0px;
+  background-color: #f0f0f0;
+  border: 1px solid #ccc;
+  padding: 2px;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: center;
+  font-size: 8px;
+  overflow: hidden;
+}
+
 
 .addelementTip div{
   margin:1px;

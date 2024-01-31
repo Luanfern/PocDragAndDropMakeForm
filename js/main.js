@@ -11,12 +11,156 @@ const openAreas = document.querySelectorAll('.openArea');
 const elementsdropdown = document.querySelector('#myDropDownElements');
 const zoomActions = document.querySelector('#zoomActions');
 
-listFieldsPDF = [
-  "[ID_PRELIMINAR]",
-  "[SEGURADORA_PRELIMINAR]",
-  "[SEGURADO_PRELIMINAR]",
-  "[DATA_PRELIMINAR]",
-  "[LOCAL_PRELIMINAR]"
+listFieldsPDF = [];
+
+listImagesPDF = [];
+
+listFontes = [{
+    "key": "Arial",
+    "value": "Arial"
+  },
+  {
+    "key": "Helvetica",
+    "value": "Helvetica"
+  },
+  {
+    "key": "Times New Roman",
+    "value": "Times New Roman"
+  },
+  {
+    "key": "Courier",
+    "value": "Courier"
+  },
+  {
+    "key": "Courier New",
+    "value": "Courier New"
+  },
+  {
+    "key": "Verdana",
+    "value": "Verdana"
+  },
+  {
+    "key": "Georgia",
+    "value": "Georgia"
+  },
+  {
+    "key": "Comic Sans MS",
+    "value": "Comic Sans MS"
+  },
+  {
+    "key": "Impact",
+    "value": "Impact"
+  },
+ /*  {
+    "key": "Tahoma",
+    "value": "Tahoma"
+  }, */
+  {
+    "key": "Trebuchet MS",
+    "value": "Trebuchet MS"
+  },
+  {
+    "key": "Palatino",
+    "value": "Palatino"
+  },
+  {
+    "key": "Garamond",
+    "value": "Garamond"
+  },
+  {
+    "key": "Book Antiqua",
+    "value": "Book Antiqua"
+  },
+  {
+    "key": "Arial Narrow",
+    "value": "Arial Narrow"
+  },
+  {
+    "key": "Arial Black",
+    "value": "Arial Black"
+  },
+  {
+    "key": "Palatino Linotype",
+    "value": "Palatino Linotype"
+  },
+  {
+    "key": "Lucida Sans Unicode",
+    "value": "Lucida Sans Unicode"
+  },
+  {
+    "key": "Lucida Console",
+    "value": "Lucida Console"
+  },
+ /*  {
+    "key": "Tahoma",
+    "value": "Tahoma"
+  },
+  {
+    "key": "Candara",
+    "value": "Candara"
+  }, */
+  {
+    "key": "Franklin Gothic Medium",
+    "value": "Franklin Gothic Medium"
+  }
+]
+
+tttBordasOpcoesPDF = [{
+    "value": "Margem na base",
+    "key": "B"
+  },
+  {
+    "value": "Margem no topo",
+    "key": "T"
+  },
+  {
+    "value": "Margem à esquerda",
+    "key": "L"
+  },
+  {
+    "value": "Margem à direita",
+    "key": "R"
+  },
+  {
+    "value": "...",
+    "key": "Possível usar mais de um por vez"
+  }
+];
+
+listalinhamentoTextPDF = [{
+    "key": "C",
+    "value": "centro"
+  },
+  {
+    "key": "L",
+    "value": "esquerda"
+  },
+  {
+    "key": "R",
+    "value": "direita"
+  },
+  {
+    "key": "J",
+    "value": "justificado - *Multicell*"
+  }
+];
+
+tttestiloTextPDF = [{
+    "value": "Texto Sublinhado",
+    "key": "U"
+  },
+  {
+    "value": "Texto Negrito",
+    "key": "B"
+  },
+  {
+    "value": "Texto Italico",
+    "key": "I"
+  },
+  {
+    "value": "...",
+    "key": "Possível usar mais de um por vez"
+  }
 ];
 
 let defaultConfigurations = {
@@ -42,9 +186,16 @@ let incrementPageId = 1;
 let currentElement = null;
 
 let selectedComponent = {
-  np: 0,
+  np: null,
   el: {
-    id: 0
+    id: null
+  }
+};
+
+let cntrCComponent = {
+  np: null,
+  el: {
+    id: null
   }
 };
 
@@ -52,120 +203,352 @@ let selectedComponentAnchorMove = null;
 
 let currentAction = null;
 
+let currentPage = null;
+
 let sheets = [];
+let comumComponents = [];
 
-window.addEventListener('load', function () {
-  //INICIAL
+async function loadPDFJSON(json) {
+  if (json == '') return false;
+  
+  const jsonParsed = JSON.parse(json);
+  incrementPageId = jsonParsed.incrementPageId;
+  defaultConfigurations = jsonParsed.defaultConfigurations;
+  
+  jsonParsed.sheets.forEach(s => {
+    new SHEET(s.id, s.margem, []).createSheet();
+    let sRef = sheets.find(function(objeto) {return objeto.id === s.id;});
+    jsonParsed.componentes[s.id][0].forEach(c => {
+      let elementInstance = elementos[elementos.findIndex(item => item.className === c.elementType)];
 
-  elementos = [{
-    id: 1,
-    nome: "Célula",
-    icon: " &#9633",
-    class: Celula,
-    className: 'Celula',
-    configuracoes: {
-      x: {
-        icon: "",
-        label: "eixo X",
-        type: "number"
-      },
-      y: {
-        icon: "",
-        label: "eixo Y",
-        type: "number"
-      },
-      width: {
-        icon: "",
-        label: "largura",
-        type: "number"
-      },
-      height: {
-        icon: "",
-        label: "altura",
-        type: "number"
-      },
-      talign: {
-        icon: "",
-        label: "alinhamento",
-        type: "text"
-      },
-      tfont: {
-        icon: "",
-        label: "fonte - texto",
-        type: "text"
-      },
-      tsize: {
-        icon: "",
-        label: "tamanho - texto",
-        type: "number"
-      },
-      tweight: {
-        icon: "",
-        label: "grossura - texto",
-        type: "text"
-      },
-      tcolor: {
-        icon: "",
-        label: "cor - texto",
-        type: "color"
-      },
-      text: {
-        icon: "",
-        label: "Texto ou Campo do Banco",
-        type: ["select", "text"],
-        values: listFieldsPDF
-      },
-      bcolor: {
-        icon: "",
-        label: "cor de fundo",
-        type: "color"
-      },
-      border: {
-        icon: "",
-        label: "borda",
-        type: "text"
-      },
-      borderwidth: {
-        icon: "",
-        label: "tamanho - borda",
-        type: "number"
-      },
-      bordercolor: {
-        icon: "",
-        label: "cor - borda",
-        type: "color"
-      },
-      last: {
-        icon: "",
-        label: "Último elemento ? (1 = S ,0 = N)",
-        type: "number"
-      },
-      link: {
-        icon: "",
-        label: "link",
-        type: "text"
-      },
-    }
-  }]
+      c.sheet = sRef;
+      delete c.lastStatusOk;
+      Object.keys(c).forEach((a) => {
+        if(c[a] == null || c[a] == 'null'){
+          c[a] = '';
+        }
+        if(c[a] === 'false'){
+          c[a] = false;
+        }
+        if(c[a] === 'true'){
+          c[a] = true;
+        }
+      });
 
-  elementos.forEach((el) => {
-    let component = '<div class="el" rel="' + el.id + '" onclick="selectedAddElement(this)" ><div class="icon">' + el.icon + '</div>' + el.nome + '</div>';
-    elementsdropdown.insertAdjacentHTML('beforeend', component)
-  })
-
-  if (sheets.length == 0) {
-    viewManager.insertAdjacentHTML('beforeend', '<div class="nosheetsExist" rel="temporary"><p>Sem páginas.</p><p><b>Para Iniciar, clique em: </b></p><p><div onclick="criarpaginafe(this)" class="btnMenu">&#43; Página</div></p></div>');
-  }
-
-  //clique em qualquer ONCLICK ou ADDEVENTLISTENER "CLICK"
-  Array.from(document.querySelectorAll('[onclick], [data-click-event]')).forEach(function (elemento) {
-    elemento.addEventListener('click', function () {
-      try {
-        let e = elemento.closest('[rel="temporary"]');
-        if (e) e.parentElement.removeChild(e);
-      } catch (error) {}
+      let componentToCreate = new elementInstance.class(c);
+      sRef.addElementoToSheetHtml(componentToCreate);
     });
   });
+
+  //COMUNS
+  jsonParsed.comuns.forEach(com => {
+    let elementInstance = elementos[elementos.findIndex(item => item.className === com.elementType)];
+    com.comum = false;
+    com.sheet = sheets[0];
+    delete com.lastStatusOk;
+    Object.keys(com).forEach((a) => {
+      if(com[a] == null || com[a] == 'null'){
+        com[a] = '';
+      }
+      if(com[a] === 'false'){
+        com[a] = false;
+      }
+      if(com[a] === 'true'){
+        com[a] = true;
+      }
+    });
+    
+    //console.log(com);
+
+    let componentToCreate = new elementInstance.class(com);
+    sheets[0].addElementoToSheetHtml(componentToCreate);
+    componentToCreate.changeComumComponent();
+  });
+
+  return false;
+}
+
+async function initialRequests() {
+  listImagesPDF = await getImages();
+  listFieldsPDF = await getColumns();
+}
+
+window.addEventListener('load', function () {
+  document.getElementById('overlay').style.display = 'flex';
+  //INICIAL
+  initialRequests().then(() => {
+      elementos = [{
+        id: 1,
+        nome: "Célula",
+        icon: " &#9633",
+        class: Celula,
+        className: 'Celula',
+        configuracoes: {
+          last: {
+            icon: "",
+            label: "Último elemento da Linha",
+            type: "checkbox"
+          },
+          x: {
+            icon: "",
+            label: "eixo X",
+            type: "number"
+          },
+          y: {
+            icon: "",
+            label: "eixo Y",
+            type: "number"
+          },
+          width: {
+            icon: "",
+            label: "largura",
+            type: "number"
+          },
+          height: {
+            icon: "",
+            label: "altura",
+            type: "number"
+          },
+          talign: {
+            icon: "📏",
+            label: "alinhamento",
+            type: "select",
+            values: listalinhamentoTextPDF
+          },
+          tfont: {
+            icon: "🔬",
+            label: "fonte",
+            type: "select",
+            values: listFontes
+          },
+          tsize: {
+            icon: "",
+            label: "tamanho do texto",
+            type: "number"
+          },
+          tweight: {
+            icon: "",
+            label: "estilo do texto",
+            type: "text",
+            tt: tttestiloTextPDF
+          },
+          tcolor: {
+            icon: "",
+            label: "cor do texto",
+            type: "color"
+          },
+          text: {
+            icon: "",
+            label: "Texto da Célula",
+            type: "text",
+          },
+          informacaoExterna: {
+            icon: "🛢️",
+            label: "Campo do Banco",
+            type: "select",
+            values: listFieldsPDF
+          },
+          bcolor: {
+            icon: "",
+            label: "cor de fundo",
+            type: "color"
+          },
+          border: {
+            icon: "",
+            label: "borda",
+            type: "text",
+            tt: tttBordasOpcoesPDF
+          },
+          borderwidth: {
+            icon: "",
+            label: "tamanho da borda",
+            type: "number"
+          },
+          bordercolor: {
+            icon: "",
+            label: "cor da borda",
+            type: "color"
+          },
+          link: {
+            icon: "",
+            label: "link",
+            type: "text"
+          },
+        }
+      },
+      {
+        id: 2,
+        nome: "Multi-Célula",
+        icon: " &#9633",
+        class: MultiCelula,
+        className: 'MultiCelula',
+        configuracoes: {
+          last: {
+            icon: "",
+            label: "Último elemento da Linha",
+            type: "checkbox"
+          },
+          x: {
+            icon: "",
+            label: "eixo X",
+            type: "number"
+          },
+          y: {
+            icon: "",
+            label: "eixo Y",
+            type: "number"
+          },
+          width: {
+            icon: "",
+            label: "largura",
+            type: "number"
+          },
+          height: {
+            icon: "",
+            label: "altura das linhas",
+            type: "number"
+          },
+          talign: {
+            icon: "📏",
+            label: "alinhamento",
+            type: "select",
+            values: listalinhamentoTextPDF
+          },
+          tfont: {
+            icon: "🔬",
+            label: "fonte",
+            type: "select",
+            values: listFontes
+          },
+          tsize: {
+            icon: "",
+            label: "tamanho do texto",
+            type: "number"
+          },
+          tweight: {
+            icon: "",
+            label: "estilo do texto",
+            type: "text",
+            tt: tttestiloTextPDF
+          },
+          tcolor: {
+            icon: "",
+            label: "cor do texto",
+            type: "color"
+          },
+          text: {
+            icon: "",
+            label: "Texto da Célula",
+            type: "textarea",
+          },
+          informacaoExterna: {
+            icon: "🛢️",
+            label: "Campo do Banco",
+            type: "select",
+            values: listFieldsPDF
+          },
+          bcolor: {
+            icon: "",
+            label: "cor de fundo",
+            type: "color"
+          },
+          border: {
+            icon: "",
+            label: "borda",
+            type: "text",
+            tt: tttBordasOpcoesPDF
+          },
+          borderwidth: {
+            icon: "",
+            label: "tamanho da borda",
+            type: "number"
+          },
+          bordercolor: {
+            icon: "",
+            label: "cor da borda",
+            type: "color"
+          },
+          link: {
+            icon: "",
+            label: "link",
+            type: "text"
+          },
+        }
+      },
+      {
+        id: 3,
+        nome: "Imagem",
+        icon: " &#9633",
+        class: Image,
+        className: 'Image',
+        configuracoes: {
+          x: {
+            icon: "",
+            label: "eixo X",
+            type: "number"
+          },
+          y: {
+            icon: "",
+            label: "eixo Y",
+            type: "number"
+          },
+          width: {
+            icon: "",
+            label: "largura",
+            type: "number"
+          },
+          height: {
+            icon: "",
+            label: "altura",
+            type: "number"
+          },
+          text: {
+            icon: "",
+            label: "URL da imagem",
+            type: "text",
+          },
+          informacaoExterna: {
+            icon: "",
+            label: "Imagens do Banco",
+            type: "imageSelect",
+            values: listImagesPDF
+          }
+        }
+      }
+    ]
+
+      elementos.forEach((el) => {
+        let component = '<div class="el" rel="' + el.id + '" onclick="selectedAddElement(this)" ><div class="icon">' + el.icon + '</div>' + el.nome + '</div>';
+        elementsdropdown.insertAdjacentHTML('beforeend', component)
+      })
+
+      createAccordeonComumComponents();
+
+      gt("{\"ACAO\":2, \"FILE\":\""+fileName+"\"}").then((r) => {
+        console.log(r);
+
+        loadPDFJSON(r).then(() => {
+
+          if (sheets.length == 0) {
+            viewManager.insertAdjacentHTML('beforeend', '<div class="nosheetsExist" rel="temporary"><p>Sem páginas.</p><p><b>Para Iniciar, clique em: </b></p><p><div onclick="criarpaginafe(this)" class="btnMenu">&#43; Página</div></p></div>');
+          }
+  
+          //clique em qualquer ONCLICK ou ADDEVENTLISTENER "CLICK"
+          Array.from(document.querySelectorAll('[onclick], [data-click-event]')).forEach(function (elemento) {
+            elemento.addEventListener('click', function () {
+              try {
+                let e = elemento.closest('[rel="temporary"]');
+                if (e) e.parentElement.removeChild(e);
+              } catch (error) {}
+            });
+          });
+  
+        document.getElementById('overlay').style.display = 'none';
+      });
+       
+      });
+  });
+  
 });
 
 
@@ -190,112 +573,67 @@ const weightText = {
   "I": "italic"
 }
 
-class Celula {
-  selfReference = null;
+class ElementBase {
+  lastStatusOk = null;
+  elementType = null;
+  selfReference = [];
+  freeSheet = false;
+  comum = false;
   id = null
   x = 0; //
   y = 0; //
   sheet = null;
   width = 10; //
   height = 0.4; //
-  talign = "C"; //
-  tfont = "Arial"; //
-  tsize = 7; //
-  tweight = ""; //
-  tcolor = "#000000"; //
-  text = "DIRECTA TEXT!"; //
-  bcolor = "#ffffff"; //
-  border = "";
-  borderwidth = 0.04;
-  bordercolor = "#ffffff";
-  last = 0; //
-  link = ""; //
   connections = [];
-  constructor(sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", bordersides = "", borderwidth = "", bordercolor = "#ffffff", last = 0, link = "", ) {
+  text = "DIRECTA TEXT!"; //
+  informacaoExterna = null; // É UM TEXTO ESSA INFORMAÇÃO!
+
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null}) {
     if (sheet == null || sheet == undefined || id == null || id == undefined) throw Error('SEM SHEET DEFINIDA PARA A CÉLULA!');
+    this.informacaoExterna = informacaoExterna;
+    this.comum = comum;
+    this.freeSheet = freeSheet;
     this.text = text;
     this.x = x;
     this.y = y;
     this.height = height;
     this.width = width;
-    this.last = last;
-    this.link = link;
-    this.bcolor = bcolor;
-    this.tcolor = tcolor;
-    this.talign = talign;
-    this.tfont = tfont;
-    this.tsize = tsize;
-    this.tweight = tweight;
-    this.border = bordersides;
-    this.borderwidth = borderwidth;
-    this.bordercolor = bordercolor;
     this.sheet = sheet;
     this.id = id;
+
+    //this.lastStatusOk = { ...this };
   }
 
-  draw() {
+  draw(sheet = this.sheet) {
 
-    let pStats = this.sheet.intoContentRect([{
-      x: (this.sheet.wcm * this.x),
-      y: (this.sheet.hcm * this.y)
+    let pStats = sheet.intoContentRect([{
+      x: (sheet.wcm * this.x),
+      y: (sheet.hcm * this.y)
     }, {
-      x: (this.width + this.x) * this.sheet.wcm,
-      y: (this.height + this.y) * this.sheet.hcm
-    }]);
+      x: (this.width + this.x) * sheet.wcm,
+      y: (this.height + this.y) * sheet.hcm
+    }], this.freeSheet, this.id, this.comum);
 
     let celula = document.createElement("div");
-    celula.setAttribute("rel", this.id);
 
-    //BACKGROUND COLOR
-    celula.style.backgroundColor = this.bcolor;
+    let h = this.height;
+    let w = this.width;
 
     //POSITION
-    celula.style.left = (this.sheet.wcm * this.x) + 'px';
-    celula.style.top = (this.sheet.hcm * this.y) + 'px';
+    celula.style.left = (sheet.wcm * this.x) + 'px';
+    celula.style.top = (sheet.hcm * this.y) + 'px';
 
     //HEIGHT - WIDTH
-    celula.style.width = (this.sheet.wcm * this.width) + 'px';
-    celula.style.height = (this.sheet.hcm * this.height) + 'px';
+    celula.style.width = (sheet.wcm * w) + 'px';
+    celula.style.height = (sheet.hcm * h) + 'px';
 
-    //TEXT
-    var text = document.createTextNode(this.text);
-    celula.style.fontFamily = this.tfont;
+    celula = this.especificacoesEstilo(celula, sheet);
+    celula = this.drawObrigatorio(celula, sheet);
+    
+    this.selfReference.push(celula);
 
-    let fs = this.sheet.hcm * (parseFloat(this.tsize) / (72 / 2.56));
-    celula.style.fontSize = fs + 'px';
-
-    celula.style.textAlign = alignText[this.talign];
-    celula.style.color = this.tcolor;
-
-    let fontstyleSplit = this.tweight.split('');
-    fontstyleSplit.forEach((e) => {
-      let s = e.toUpperCase();
-      if (s == 'B') {
-        celula.style.fontWeight = weightText[this.tweight];
-      }
-      if (s == 'I') {
-        celula.style.fontStyle = weightText[this.tweight];
-      }
-      if (s == 'U') {
-        celula.style.textDecoration = weightText[this.tweight];
-      }
-    })
-
-    //BORDER
-    let sidesSplit = this.border.split('');
-    sidesSplit.forEach((e) => {
-      let sd = sideChars[e];
-      let w = this.sheet.hcm * this.borderwidth;
-      celula.style[sd] = w + "px solid " + this.bordercolor;
-    })
-
-    celula.setAttribute('class', 'componentPDF');
-
-    celula.appendChild(text);
-
-    this.selfReference = celula;
-
-    if (pStats.retInto) {
+    if (pStats.retInto && pStats.touchComponent) {
       return celula;
     } else {
       return null;
@@ -303,6 +641,17 @@ class Celula {
 
   }
 
+  especificacoesEstilo(celula, sheet){
+    let celulaStyle = celula;
+    return celulaStyle;
+  }
+
+  drawObrigatorio(celula, sheet){
+    let celulaInfo = celula;
+    celula.setAttribute('class', 'componentPDF');
+    celula.setAttribute("rel", this.id);
+    return celulaInfo;
+  }
 
   //SET PARAMETERS CALL
   setParameterComponent(value, parametro) {
@@ -312,23 +661,42 @@ class Celula {
       oldValues.push(this[pi]);
     })
 
-    if (!isNaN(value)) {
+    if(value == ''){
+      this.setParameters([parametro], [value]);
+    } else if (!isNaN(value)) {
       this.setParameters([parametro], [parseFloat(value.toFixed(2))]);
+    } else if(value == null || value == undefined){
+      this.setParameters([parametro], oldValues);
     } else {
       this.setParameters([parametro], [value]);
     }
+    
+    this.selfReference.splice(0, this.selfReference.length);
 
-    let d = this.draw();
-    if (d == null) {
-      this.setParameters([parametro], oldValues);
+    if(this.comum){
+      sheets.forEach(s => {
+        let d = this.draw(s);
+
+        if (d == null) {
+          this.setParameters([parametro], oldValues);
+        } else {
+          this.reDraw(d, s);
+        }
+
+      });
     } else {
-      this.reDraw(d);
+      let d = this.draw();
+      if (d == null) {
+        this.setParameters([parametro], oldValues);
+      } else {
+        this.reDraw(d);
+      }
     }
   }
 
-  reDraw(d) {
-    let pai = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
-    let subs = this.sheet.getSR().querySelector('.componentPDF[rel="' + this.id + '"]');
+  reDraw(d, s = this.sheet) {
+    let pai = s.getSR().querySelector('.componentPDF[rel="' + this.id + '"]').parentElement;
+    let subs = s.getSR().querySelector('.componentPDF[rel="' + this.id + '"]');
     pai.replaceChild(d, subs);
   }
 
@@ -346,10 +714,7 @@ class Celula {
       c.rels.forEach(rel => {
         if (c.type == 'text') {
           c.comp.querySelector('[rel="' + rel + '"]').innerHTML = this[rel];
-        } else if (c.type == 'input') {
-          c.comp.value = this[rel];
-        } else if (c.type == 'select') {
-          console.log(c.comp);
+        } else if (c.type == 'input' || c.type == 'select' || c.type == 'textarea') {
           c.comp.value = this[rel];
         }
       })
@@ -362,14 +727,34 @@ class Celula {
       this[pi] = v[k]
     })
 
+    this.lastStatusOk = { ...this };
     this.updateConnectionsINF();
   }
 
-  getSR() {
-    return this.selfReference;
+  getSR(ra = false) {
+    if(ra){
+      return this.selfReference;
+    } else {
+      return this.selfReference[0];
+    }
+  }
+
+  rollback(){
+    //console.log('CRIAR CÓDIGO - ROLLBACK: '+this.id);
+    if(this.lastStatusOk != null){
+      Object.assign(this, this.lastStatusOk);
+      let elementInstance = elementos[elementos.findIndex(item => item.className === this.elementType)];
+      console.log(elementInstance);
+      Object.keys(elementInstance?.configuracoes).forEach(cnfops => {
+        if(this[cnfops] != this.lastStatusOk[cnfops] && this.lastStatusOk[cnfops] != undefined){
+          this.setParameterComponent(this.lastStatusOk[cnfops], cnfops);
+        }
+      });
+    }
   }
 
   changeOrder(c) {
+    if(this.comum) return false;
     let selfIndex = this.sheet.components.findIndex(i => i.id == this.id);
 
     if (c == 'up') {
@@ -408,15 +793,296 @@ class Celula {
 
   deleteMe() {
     try {
-      this.sheet.components.splice(this.id, 1);
-      this.getSR().parentElement.removeChild(this.getSR());
+      console.log('deletando');
+      if(this.comum) {
+        console.log(this.getSR(true));
+        comumComponents.splice(comumComponents.findIndex(c => c.id == this.id), 1);
+        this.getSR(true).forEach(c => {
+          c.parentElement.removeChild(c);
+        });
+      } else {
+        this.sheet.components.splice(this.sheet.components.findIndex(c => c.id == this.id), 1);
+        this.getSR().parentElement.removeChild(this.getSR());
+      }
       return true;
     } catch (error) {
       return false
     }
   }
+
+  changeComumComponent(){
+    if(this.comum) return false;
+    let lastId = 1;
+    if(comumComponents.length > 0){
+      lastId = Number(comumComponents[comumComponents.length - 1].id.split('_').at(-1)) + 1;
+    }
+    let celulaComum = new this.constructor({
+      sheet: this.sheet, id: 'comumComponent_'+lastId, text: this.text, x: this.x, y: this.y, width: this.width,
+      height: this.height, freeSheet: this.freeSheet, comum: true, informacaoExterna: this.informacaoExterna,
+      tcolor: this.tcolor, talign: this.talign, tfont: this.tfont, tsize: this.tsize, tweight: this.tweight,
+      bcolor: this.bcolor , border: this.border, borderwidth: this.borderwidth, bordercolor: this.bordercolor,
+      last: this.last, link: this.link
+    });
+    comumComponents.push(celulaComum);
+    addToMyElements(celulaComum, 'comumComponents');
+    this.deleteMe();
+    sheets.forEach(s => {
+      let celula = celulaComum.draw();
+      let currentSheet = s.getSR().querySelector('.content');
+      console.log(celula);
+      currentSheet.appendChild(celula);
+    });
+    let repEl = listElementsArea.querySelector('.contentAUX').querySelector('.pageAccordeon[rel="' + this.sheet.id + '"]').querySelector('.pagePanelAcordeon div[rel="'+this.id+'"]');
+    repEl.parentNode.removeChild(repEl);
+    configSheetArea.querySelector('.currentElement').textContent = 'Sem Elemento...';
+    configSheetArea.querySelector('.contentAUX').innerHTML = '';
+
+    console.log(comumComponents);
+  }
 }
 
+class CelulaBase extends ElementBase {
+  talign = "C"; //
+  tfont = "Arial"; //
+  tsize = 7; //
+  tweight = ""; //
+  tcolor = "#000000"; //
+  bcolor = "#ffffff"; //
+  border = "";
+  borderwidth = 0.04;
+  bordercolor = "#ffffff";
+  last = 0; //
+  link = ""; //
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = '', tcolor = "#000000", talign = "C", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+    super({sheet, id, text, x, y, width, height, freeSheet, comum, informacaoExterna});
+    this.last = last;
+    this.link = link;
+    this.bcolor = bcolor;
+    this.tcolor = tcolor;
+    this.talign = talign;
+    this.tfont = tfont;
+    this.tsize = tsize;
+    this.tweight = tweight;
+    this.border = border;
+    this.borderwidth = borderwidth;
+    this.bordercolor = bordercolor;
+
+    this.lastStatusOk = { ...this };
+  }
+
+  draw(sheet = this.sheet) {
+    let pStats = sheet.intoContentRect([{
+      x: (sheet.wcm * this.x),
+      y: (sheet.hcm * this.y)
+    }, {
+      x: (this.width + this.x) * sheet.wcm,
+      y: (this.height + this.y) * sheet.hcm
+    }], this.freeSheet, this.id, this.comum);
+
+    let celula = document.createElement("div");
+
+    //BACKGROUND COLOR
+    celula.style.backgroundColor = this.bcolor;
+
+    //TEXT
+    var text = document.createTextNode((this.informacaoExterna == '' || this.informacaoExterna == null || this.informacaoExterna == undefined) ? this.text/* +' '+this.id */ : this.informacaoExterna);
+    celula.style.fontFamily = this.tfont;
+
+    let fs = sheet.hcm * (parseFloat(this.tsize) / (72 / 2.56));
+    celula.style.fontSize = fs + 'px';
+
+    celula.style.textAlign = alignText[this.talign];
+    celula.style.color = this.tcolor;
+
+    let fontstyleSplit = this.tweight.split('');
+    fontstyleSplit.forEach((e) => {
+      let s = e.toUpperCase();
+      if (s == 'B') {
+        celula.style.fontWeight = weightText[this.tweight];
+      }
+      if (s == 'I') {
+        celula.style.fontStyle = weightText[this.tweight];
+      }
+      if (s == 'U') {
+        celula.style.textDecoration = weightText[this.tweight];
+      }
+    })
+
+    let h = this.height;
+    let w = this.width;
+
+    //BORDER
+    let sidesSplit = this.border.split('');
+    sidesSplit.forEach((e) => {
+      let sd = sideChars[e];
+      let wb = sheet.hcm * this.borderwidth;
+      celula.style[sd] = wb + "px solid " + this.bordercolor;
+      if(e == "B"){
+        h += this.borderwidth;
+      }
+      if(e == "R"){
+        w += this.borderwidth;
+      }
+      if(e == "L"){
+        w += this.borderwidth;
+      }
+      if(e == "T"){
+        h += this.borderwidth;
+      }
+    })
+
+    //POSITION
+    celula.style.left = (sheet.wcm * this.x) + 'px';
+    celula.style.top = (sheet.hcm * this.y) + 'px';
+
+    //HEIGHT - WIDTH
+    celula.style.width = (sheet.wcm * w) + 'px';
+    celula.style.height = (sheet.hcm * h) + 'px';
+
+    celula = this.especificacoesEstilo(celula, sheet);
+    celula = this.drawObrigatorio(celula, sheet);
+    
+
+    celula.appendChild(text);
+
+    this.selfReference.push(celula);
+
+    if (pStats.retInto && pStats.touchComponent) {
+
+      return celula;
+    } else {
+      return null;
+    }
+
+  }
+
+  especificacoesEstilo(celula, sheet){
+    let celulaStyle = celula;
+    celulaStyle.style.lineHeight = (sheet.hcm * this.height) + 'px';
+    return celulaStyle;
+  }
+
+  copyPaste(){
+
+    let indexEl = elementos.findIndex(item => item.className === this.elementType);
+    let copy = Object.assign({}, this);
+    if (this.sheet.components.length > 0) {
+      let elId = Number(this.sheet.components.at(-1).id.split('_').at(-1))+1;
+      copy.id = Number(this.sheet.id)+'_'+elId;
+    }
+
+    if(this.last == 1){
+      //CALCULO PARA INSERIR EM BAIXO
+      copy.y = this.y + this.height;
+    } else {
+      //CALCULO PARA INSERIR AO LADO
+      copy.x = this.x + this.width;
+    }
+
+    copy.selfReference = [];
+    copy.lastStatusOk = null;
+    copy.connections = [];
+
+    let componentToCopy = new elementos[indexEl].class(copy);
+    this.sheet.addElementoToSheetHtml(componentToCopy);
+  }
+}
+
+class Celula extends CelulaBase{
+  
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+    super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna, tcolor , talign , tfont, tsize , tweight , bcolor , border, borderwidth, bordercolor, last, link});
+    this.elementType = 'Celula';
+    this.lastStatusOk = { ...this };
+  }
+
+  especificacoesEstilo(celula, sheet){
+    let celulaStyle = celula;
+    celulaStyle.style.lineHeight = (sheet.hcm * this.height) + 'px';
+    celulaStyle.style.whiteSpace = 'nowrap';
+    var offsetTexto = celulaStyle.getBoundingClientRect().left - celulaStyle.offsetLeft;
+    if (this.talign == "L") {
+      celulaStyle.style.marginLeft = "-" + (celulaStyle.offsetWidth / 2) + "px";
+    } else if (this.talign == "R") {
+      celulaStyle.style.marginRight = "-" + (celulaStyle.offsetWidth / 2) + "px";
+    }
+    return celulaStyle;
+  }
+}
+
+class MultiCelula extends CelulaBase{
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+    super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna, tcolor , talign , tfont, tsize , tweight , bcolor , border, borderwidth, bordercolor, last, link});
+    this.elementType = 'MultiCelula';
+    this.height = (parseFloat(this.tsize+2) / (72 / 2.56));
+    this.lastStatusOk = { ...this };
+  }
+
+  especificacoesEstilo(celula, sheet){
+    let celulaStyle = celula;
+    celulaStyle.style.textAlign = 'justify';
+    celulaStyle.style.lineHeight = (this.height*sheet.hcm) + 'px';
+    celulaStyle.style.height = 'auto';
+    celulaStyle.style.overflow = 'hidden';
+    return celulaStyle;
+  }
+}
+
+class Image extends ElementBase{
+  //'./PocDragAndDropMakeForm/img/NoImage.jpg'
+  imagePath = '';
+  extensionImage = '';
+  constructor({sheet, id, text = "DIRECTA Image!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = true, informacaoExterna = null}) {
+    super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna});
+    this.elementType = 'Image';
+    this.lastStatusOk = { ...this };
+  }
+
+  draw(sheet = this.sheet) {
+    let pStats = sheet.intoContentRect([{
+      x: (sheet.wcm * this.x),
+      y: (sheet.hcm * this.y)
+    }, {
+      x: (this.width + this.x) * sheet.wcm,
+      y: (this.height + this.y) * sheet.hcm
+    }], this.freeSheet, this.id, this.comum);
+
+    console.log(pStats);
+
+    let celula = document.createElement("img");
+    let h = this.height;
+    let w = this.width;
+    //POSITION
+    celula.style.left = (sheet.wcm * this.x) + 'px';
+    celula.style.top = (sheet.hcm * this.y) + 'px';
+    //HEIGHT - WIDTH
+    celula.style.width = (sheet.wcm * w) + 'px';
+    celula.style.height = (sheet.hcm * h) + 'px';
+
+    if(this.informacaoExterna == '' || this.informacaoExterna == null){
+      if(this.text.includes('http') && this.text.includes('://')){
+        celula.src = this.text;   
+      } else {
+        celula.src = './img/NoImage.jpg'; 
+      }
+    } else {
+      this.imagePath = this.informacaoExterna;
+      celula.src = this.imagePath.src;
+    }
+
+    celula = this.especificacoesEstilo(celula, sheet);
+    celula = this.drawObrigatorio(celula, sheet);
+    
+    this.selfReference.push(celula);
+
+    if (pStats.retInto && pStats.touchComponent) {
+      return celula;
+    } else {
+      return null;
+    }
+
+  }
+}
 
 class SHEET {
   selfReference = null;
@@ -434,6 +1100,7 @@ class SHEET {
   components = [];
   rectConstruct = [];
   inClick = false;
+  unionPreviousPage = false;
   constructor(id, margem = {
     "top": 1,
     "bottom": 1,
@@ -455,8 +1122,11 @@ class SHEET {
     let newSheet = document.createElement("div");
     newSheet.setAttribute('class', 'sheet');
     newSheet.setAttribute('rel', this.id);
-    newSheet.addEventListener("click", function () {})
-    newSheet.insertAdjacentHTML('beforeend', '<div class="addelementTip"><div><b>X (CM):</b><div class="coordXSheet"></div></div> &nbsp;&nbsp;|&nbsp;&nbsp; <div><b>Y (CM):</b><div class="coordYSheet"></div></div></div><div class="mv mtop"></div><div class="mv mbottom"></div><div class="mh mleft"></div><div class="mh mright"></div> <div class="content"></div>');
+    if(currentAction == 'HANDLE'){
+      newSheet.classList.add('gragItems');
+    }
+    newSheet.insertAdjacentHTML('beforeend', '<div class="addelementTip"><div><b>X (CM):</b><div class="coordXSheet"></div></div> &nbsp;&nbsp;|&nbsp;&nbsp; <div><b>Y (CM):</b><div class="coordYSheet"></div></div></div><div class="classificacaoSheet"><input type="checkbox" name="classificacaoSheet'+this.id+'" id="classificacaoSheet'+this.id+'" rel="'+this.id+'" onchange="unirPaginaAnterior(this)">&nbsp<label for="classificacaoSheet'+this.id+'"><b>Unir com a página anterior</b></label></div><div class="mv mtop"></div><div class="mv mbottom"></div><div class="mh mleft"></div><div class="mh mright"></div> <div class="content"></div>');
+    
     viewManager.append(newSheet);
 
     this.selfReference = newSheet;
@@ -473,13 +1143,43 @@ class SHEET {
     if (document.querySelector('.nosheetsExist')) {
       document.querySelector('.nosheetsExist').parentElement.removeChild(document.querySelector('.nosheetsExist'));
     }
+
+    //CREATE COMUNS COMPONENTS -> EXTERNAL AFTER!
+    comumComponents.forEach(c => {
+      let celula = c.draw();
+      let currentSheet = this.getSR().querySelector('.content');
+      currentSheet.appendChild(celula);
+    })
+
+    this.setSizeSheet(defaultConfigurations.zoomPctg);
   }
 
 
 
   //CREATE MINISHEET
   createMiniSheet() {
-    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet" onclick="setCurrentPage(' + this.id + ', true, true)" rel="' + this.id + '"><p>' + this.id + '</p></div>');
+    let paiRef = this;
+    listSheetsArea.insertAdjacentHTML('beforeend', '<div class="minisheet" onclick="setCurrentPage(' + this.id + ', true, true)" rel="' + this.id + '"><div class="contentMiniSheet"><p>ID ' + this.id + '</p></div><div class="excluirPagina">Excluir</div></div>');
+    let qs = document.querySelector('.minisheet[rel="'+this.id+'"] .excluirPagina');
+    qs.addEventListener('click', function (e) {
+      let depend = sheets[sheets.findIndex(s => s.unionPreviousPage == paiRef.id)];
+      console.log(depend);
+      if(depend != undefined) {
+        alert('Outra(s) página(s) dependem dessa. Delete elas para prosseguir.');
+        return false;
+      }
+      e.stopPropagation();
+      let acdon = listElementsArea.querySelector('.contentAUX .pageAccordeon[rel="'+paiRef.id+'"]');
+      acdon.parentElement.removeChild(acdon);
+
+      let mnst = listSheetsArea.querySelector('.minisheet[rel="'+paiRef.id+'"]');
+      mnst.parentElement.removeChild(mnst);
+      
+      sheets.splice(sheets.findIndex(s => s.id == paiRef.id), 1);
+      
+      paiRef.getSR().parentElement.removeChild(paiRef.getSR());
+
+    })
   }
 
   setSizeSheet(pctg) {
@@ -513,6 +1213,10 @@ class SHEET {
     this.components.forEach(c => {
       c.reDraw(c.draw());
     });
+
+    comumComponents.forEach(c => {
+      c.reDraw(c.draw(), this);
+    });
   }
 
   //CREATE PAGE ACCORDION
@@ -526,7 +1230,7 @@ class SHEET {
 
     let pageButtonAccordeon = document.createElement('div');
     pageButtonAccordeon.setAttribute('class', 'pageButtonAccordeon');
-    pageButtonAccordeon.innerHTML = 'Página ' + this.id;
+    pageButtonAccordeon.innerHTML = 'Página - ID ' + this.id;
 
     let pagePanelAcordeon = document.createElement('div');
     pagePanelAcordeon.setAttribute('class', 'pagePanelAcordeon active');
@@ -563,6 +1267,10 @@ class SHEET {
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
           let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
+          if(el == undefined) {
+            el = comumComponents[comumComponents.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
+          }
+          console.log(paiRef.components);
           selectComponent(paiRef.id, el);
           const rect = el.getSR().getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
@@ -577,8 +1285,23 @@ class SHEET {
         if (currentElement == null && currentAction == null) {
           alert('nenhum elemento selecionado!');
         } else {
+          console.log(e.button)
           switch (e.button) {
             case 0:
+              var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
+              var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
+              content.append(selectAreaMouse);
+              selectAreaMouse.style.top = mouseY + 'px';
+              selectAreaMouse.style.left = mouseX + 'px';
+              selectAreaMouse.style.width = '0px';
+              selectAreaMouse.style.height = '0px';
+              paiRef.rectConstruct.push({
+                x: mouseX,
+                y: mouseY
+              });
+              break;
+
+            case 2:
               var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
               var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
               content.append(selectAreaMouse);
@@ -598,12 +1321,13 @@ class SHEET {
 
     content.addEventListener('mouseup', function (e) {
       if (paiRef.inClick && currentAction == 'HANDLE') {
-        selectedComponentAnchorMove = null;
         paiRef.inClick = false;
+        selectedComponentAnchorMove = null;
+        paiRef.rectConstruct = [];
       }
       if (paiRef.inClick && currentAction == 'CREATE') {
-        content.removeChild(selectAreaMouse);
         paiRef.inClick = false;
+        content.removeChild(selectAreaMouse);
         var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
         var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
         paiRef.rectConstruct.push({
@@ -613,7 +1337,7 @@ class SHEET {
 
         let insertID = 1;
         if (paiRef.components.length > 0) {
-          insertID = paiRef.components.at(-1).id + 1;
+          insertID = Number(paiRef.components.at(-1).id.split('_').at(-1)) + 1;
         }
 
         let w = (paiRef.rectConstruct[1].x - paiRef.rectConstruct[0].x) / paiRef.wcm;
@@ -622,7 +1346,10 @@ class SHEET {
         let y = paiRef.rectConstruct[0].y / paiRef.hcm;
 
         let indexEl = elementos.findIndex(item => item.id === Number(currentElement));
-        let componentToCreate = new elementos[indexEl].class(paiRef, insertID, undefined, x, y, w, h, undefined, "C", undefined, undefined, "B", undefined, "B", 0.04, '#FF0000', 1, undefined);
+        let free = false;
+        if(e.button == 0) free = false;
+        if(e.button == 2) free = true;
+        let componentToCreate = new elementos[indexEl].class({sheet: paiRef, id: paiRef.id+'_'+insertID, x: x, y: y, width: w, height: h, freeSheet: free, comum: false, informacaoExterna: null});
         paiRef.addElementoToSheetHtml(componentToCreate);
 
         paiRef.rectConstruct = [];
@@ -640,7 +1367,7 @@ class SHEET {
       tip.querySelector('.coordXSheet').innerHTML = ((mouseX) / paiRef.wcm).toFixed(1);
       tip.querySelector('.coordYSheet').innerHTML = ((mouseY) / paiRef.hcm).toFixed(1);
 
-      if (paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el.id != 0 && selectedComponentAnchorMove != null) {
+      if (paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el?.id != 0 && selectedComponentAnchorMove != null) {
         let nx = (((mouseX) / paiRef.wcm) - ((selectedComponentAnchorMove.x / paiRef.wcm)));
         let ny = (((mouseY) / paiRef.hcm) - ((selectedComponentAnchorMove.y / paiRef.hcm)));
         selectedComponent.el.setParameterComponent(parseFloat(nx), 'x');
@@ -649,6 +1376,7 @@ class SHEET {
     });
 
     content.addEventListener('mouseover', function (e) {
+      if(paiRef.inClick) return false;
       if (currentAction == 'HANDLE') {
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
@@ -659,11 +1387,12 @@ class SHEET {
     });
 
     content.addEventListener('mouseout', (e) => {
+      if(paiRef.inClick) return false;
       if (currentAction == 'HANDLE') {
         // Verifica se o alvo do evento é um filho do paiElemento
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
-          if (selectedComponent.el.id != e.target.getAttribute('rel')) {
+          if (selectedComponent.el?.id != e.target.getAttribute('rel')) {
             e.target.classList.add('NOhighlight');
             e.target.classList.remove('highlight');
           }
@@ -673,20 +1402,40 @@ class SHEET {
   }
 
   //POSITION COMPONENTS DATA
-  intoContentRect(mxy) {
-    let l = this.margem.left;
-    let t = this.margem.top;
-    let r = this.getSR().getBoundingClientRect().width - this.margem.right;
-    let b = this.getSR().getBoundingClientRect().height - this.margem.bottom;
+  intoContentRect(mxy, free, elID, comum) {
 
+    let l;
+    let t;
+    let r;
+    let b;
+
+    if(free){
+      l = 0;
+      t = 0;
+      r = this.getSR().getBoundingClientRect().width;
+      b = this.getSR().getBoundingClientRect().height;
+    } else {
+      l = this.margem.left;
+      t = this.margem.top;
+      r = this.getSR().getBoundingClientRect().width - this.margem.right;
+      b = this.getSR().getBoundingClientRect().height - this.margem.bottom;
+
+    }
     let retInto = true;
+    let touchComponent = true;
     let retClick = false;
-
+    
     mxy.forEach((p) => {
       let mx = p.x;
       let my = p.y;
       if ((mx < l || mx > r || my < t || my > b) && retInto == true) {
         retInto = false;
+       /*  console.log(mx);
+        console.log(my);
+        console.log(l);
+        console.log(r);
+        console.log(t);
+        console.log(b); */
       }
     });
 
@@ -698,10 +1447,17 @@ class SHEET {
       }
     }
 
+
+    //Verificando componentes ao redor
+    if(!comum){
+      touchComponent = verificarSobreposicao(this.components.filter((numero) => numero.id != elID), mxy[0].x/this.wcm, mxy[0].y/this.hcm, ((mxy[1].x/this.wcm)-(mxy[0].x/this.wcm)), ((mxy[1].y/this.hcm) - (mxy[0].y/this.hcm)));
+    }
+
+    //retorno
     return {
       retInto: retInto,
-      retClick,
-      retClick
+      touchComponent: touchComponent,
+      retClick: retClick,
     };
   }
 
@@ -714,6 +1470,8 @@ class SHEET {
       currentSheet.appendChild(celula);
       this.components.push(ne);
       addToMyElements(ne, this.id);
+    } else {
+      alert('Elemento sobreposto ou fora de sua regra de criação!');
     }
   }
 
@@ -760,7 +1518,6 @@ class SHEET {
 
   }
 
-
   getSR() {
     return this.selfReference;
   }
@@ -770,17 +1527,41 @@ class SHEET {
 
 
 //SYSTEM FUNCTIONS
+//SOBREPOSIÇÃO DE COMPONENTES
+function verificarSobreposicao(components, x, y, width, height) {
+  for (const elemento of components) {
+      const { x: elementoX, y: elementoY, width: elementoWidth, height: elementoHeight } = elemento;
+
+      // Verifica se os retângulos estão se sobrepondo
+      if (
+          x < elementoX + elementoWidth &&
+          x + width > elementoX &&
+          y < elementoY + elementoHeight &&
+          y + height > elementoY
+      ) {
+          return false;
+      }
+  }
+
+  return true;
+}
+
+
+
 //SET CURRENT PAGE
 function setCurrentPage(sheetClassId, doScroll, clickMiniPage = false) {
+
+  currentPage = sheets[sheets.findIndex(s => s.id == sheetClassId)];
   listSheetsArea.querySelectorAll('.minisheet').forEach((m) => {
     let r = m.getAttribute('rel');
 
+    let nm = m.querySelector('.contentMiniSheet')
     if (r == sheetClassId) {
       m.classList.add('miniSheetActive');
-      m.innerHTML = 'AQUI <p>' + r + '</p>';
+      nm.innerHTML = 'AQUI <p>ID ' + r + '</p>';
     } else {
       m.classList.remove('miniSheetActive');
-      m.innerHTML = '<p>' + r + '</p>';
+      nm.innerHTML = '<p>ID ' + r + '</p>';
     }
   });
   let esheet = document.querySelector('.sheet[rel="' + sheetClassId + '"]');
@@ -795,6 +1576,7 @@ function setCurrentPage(sheetClassId, doScroll, clickMiniPage = false) {
     listSheetsArea.classList.toggle("show");
   }
 }
+
 
 //MODAL 
 var modal = document.getElementById("myModal");
@@ -846,7 +1628,7 @@ window.onclick = function (event) {
 }
 
 //MARGINS
-function applyMargins(sheetClassId, all = false) {
+function applyMargins(sheetClassId, all = false, mgsFix = null) {
   const iverticalMT = document.getElementById('verticalMT').value;
   const iverticalMR = document.getElementById('verticalMR').value;
   const ihorizontalME = document.getElementById('horizontalME').value;
@@ -859,7 +1641,11 @@ function applyMargins(sheetClassId, all = false) {
   } else {
 
     let sheet = sheets[sheets.findIndex((sheet) => sheet.id === sheetClassId)];
-    sheet.setMargem(iverticalMT, iverticalMR, ihorizontalME, ihorizontalMD);
+    if(mgsFix == null){
+      sheet.setMargem(iverticalMT, iverticalMR, ihorizontalME, ihorizontalMD);
+    } else {
+      sheet.setMargem(mgsFix.top, mgsFix.bottom, mgsFix.left, mgsFix.right);
+    }
   }
 
 }
@@ -1002,7 +1788,7 @@ function selectComponent(np, el) {
     el: el
   }
   configSheetArea.querySelector('.currentElement').textContent = el.text;
-  Array.from(listElementsArea.querySelectorAll('.contentAUX .pageAccordeon[rel="' + np + '"] .pagePanelAcordeon .myElement')).forEach(accds => {
+  Array.from(listElementsArea.querySelectorAll('.pagePanelAcordeon .myElement')).forEach(accds => {
     if (accds.getAttribute('rel') == el.id) {
       accds.classList.add('active');
     } else {
@@ -1019,174 +1805,283 @@ function createFormFromElement(e) {
   let indexEl = elementos.findIndex(item => item.className == e.constructor.name);
 
   let configs = elementos[indexEl].configuracoes;
-  //let content = '';
   for (let [key, value] of Object.entries(configs)) {
-    if (Array.isArray(value.type)) {
-      var multiType = document.createElement('div');
-      var checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.checked = true;
-
-      let multiTypeSpan = document.createElement('span');
-      multiTypeSpan.innerHTML = value.label;
-      multiTypeSpan.style.fontSize = '11px';
-      multiTypeSpan.style.fontWeight = 'bold';
-
-      var inputContainer = document.createElement('div');
-
-      let inpArea = document.createElement('div');
-        inpArea.setAttribute('class', 'inpConfig');
-        inpArea.setAttribute('rel', e.id);
-
-        let inpAreaInput = document.createElement('select');
-        inpAreaInput.style.width = '100%';
-        inpAreaInput.setAttribute('rel', key);
-
-        value.values.forEach(vs => {
-          var option = document.createElement('option');
-          option.value = vs;
-          option.text = vs;
-          inpAreaInput.appendChild(option);
-
-        })
-
-        inpAreaInput.addEventListener('change', function (ri) {
-          e.setParameterComponent(inpAreaInput.value, key);
-        })
-
-        e.addConnection('select', [key], inpAreaInput);
-
-        inpArea.append(inpAreaInput);
-        inputContainer.insertAdjacentElement('beforeend', inpArea);
-
-        let inpArea2 = document.createElement('div');
-        inpArea2.setAttribute('class', 'inpConfig');
-        inpArea2.setAttribute('rel', e.id);
-
-        let inpAreaInput2 = document.createElement('input');
-        inpAreaInput2.setAttribute('type', value.type);
-        if (value.type == 'number') {
-          inpAreaInput2.setAttribute('step', '0.05');
-        }
-        inpAreaInput2.setAttribute('value', e[key]);
-        inpAreaInput2.setAttribute('rel', key);
-
-        inpAreaInput2.addEventListener('change', function (ri) {
-          let vr = inpAreaInput2.value;
-          e.setParameterComponent(vr, key);
-        })
-
-        e.addConnection('input', [key], inpAreaInput);
-
-        inpArea2.append(inpAreaInput2);
-        inpArea.style.display = 'none';
-        inputContainer.insertAdjacentElement('beforeend', inpArea2);
-
-      multiType.appendChild(checkbox);
-      multiType.appendChild(multiTypeSpan);
-      multiType.appendChild(inputContainer);
-
-      checkbox.addEventListener('change', function () {
-        // Se o checkbox estiver marcado, mostra o input e esconde o select
-        if (checkbox.checked) {
-          inputContainer.style.display = 'block';
-          inpArea.style.display = 'none';
-          inpArea2.style.display = 'block';
-        } else { // Se não estiver marcado, mostra o select e esconde o input
-          inputContainer.style.display = 'block';
-          inpArea.style.display = 'block';
-          inpArea2.style.display = 'none';
-        }
-      });
-
-
-      configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', multiType);
-
-    } else {
-      if (value.type == 'select') {
-        let inpArea = document.createElement('div');
-        inpArea.setAttribute('class', 'inpConfig');
-        inpArea.setAttribute('rel', e.id);
-
-        let inpAreaSpan = document.createElement('span');
-        inpAreaSpan.innerHTML = value.label;
-
-        let inpAreaInput = document.createElement('select');
-        inpAreaInput.style.width = '100%';
-        inpAreaInput.setAttribute('rel', key);
-
-        value.values.forEach(vs => {
-          var option = document.createElement('option');
-          option.value = vs;
-          option.text = vs;
-          inpAreaInput.appendChild(option);
-
-        })
-
-        inpAreaInput.addEventListener('change', function (ri) {
-          e.setParameterComponent(inpAreaInput.value, key);
-        })
-
-        e.addConnection('select', [key], inpAreaInput);
-
-        inpArea.append(inpAreaSpan);
-        inpArea.append(inpAreaInput);
-        configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
-      } else {
-        let inpArea = document.createElement('div');
-        inpArea.setAttribute('class', 'inpConfig');
-        inpArea.setAttribute('rel', e.id);
-
-        let inpAreaSpan = document.createElement('span');
-        inpAreaSpan.innerHTML = value.label;
-
-        let inpAreaInput = document.createElement('input');
-        inpAreaInput.setAttribute('type', value.type);
-        if (value.type == 'number') {
-          inpAreaInput.setAttribute('step', '0.05');
-        }
-        inpAreaInput.setAttribute('value', e[key]);
-        inpAreaInput.setAttribute('rel', key);
-
-        inpAreaInput.addEventListener('change', function (ri) {
-          let vr = inpAreaInput.value;
-          if (value.type == 'number') {
-            vr = parseFloat(inpAreaInput.value);
-          }
-          e.setParameterComponent(vr, key);
-        })
-
-        e.addConnection('input', [key], inpAreaInput);
-
-        inpArea.append(inpAreaSpan);
-        inpArea.append(inpAreaInput);
-        configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
-      }
-    }
-    //content += '<div class="inpConfig" rel="' + e.id + '"><span>' + value.label + '</span><input type="' + value.type + '" value="' + e.c[key] + '"  onchange="setParameterComponent(this.value, \'' + key + '\', ' + e.id + ')"></div>';
+   let opts = [];
+   let tt = [];
+   if(value.values?.length > 0){
+    opts = value.values;
+   }
+   if(value.tt?.length > 0){
+    tt = value.tt;
+   }
+    let inpArea = inputEscolhido(type = value.type, property = key, e, label = value.label, options = opts, iconSelect = value.icon, tutorialPass = tt);
+    configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
   }
 
-  //LISTENNER OF AUX CONFIG CHANGES - delete inputs
-  /* 
-    //no pai do que pretende escutar as alterações
-    const targetNode = configSheetArea.querySelector('.contentAUX'); 
-    const config = { childList: true, subtree: true};
-    const observer = new MutationObserver(function(mutationsList) {
-      for (let mutation of mutationsList) { //para cada uma das alterações no DOM
-        if (mutation.type == 'childList') { //se afeta os filhos
-          if(mutation.removedNodes.length > 0)
-          mutation.removedNodes
-          const removedIds = [...mutation.removedNodes].map(x => x.id); //apanhar os id's
-          if (removedIds.includes("teste")){ //se o id existe é porque foi removido
-            console.log("teste removido");
-          }
-        }
-      }
-    }); 
-    
-    observer.observe(targetNode, config); */
+  //TORNAR COMUM ENTRE PAGINAS
+  let inpArea = document.createElement('div');
+  inpArea.setAttribute('class', 'inpConfig');
+  inpArea.setAttribute('rel', e.id);
+  let btnComum = document.createElement('button');
+  btnComum.innerHTML = "Tornar Comum";
+  btnComum.setAttribute("type", "button");
+  inpArea.append(btnComum);
+  configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
+
+  btnComum.addEventListener("click", function() {
+    var result = window.confirm("Tornar o elemento "+e.text+" comum ? (irreversível)");
+    if (result) {
+      e.changeComumComponent();
+    }
+  });
 }
 
+function unirPaginaAnterior(checkbox) {
+  alert('Ao realizar essa alteração, o conteúdo desta página será continuado a partir da página anterior. Esse método é particularmente útil em situações envolvendo multicélulas ou componentes que expandem dinamicamente.\nSe a página anterior não estiver completamente preenchida, os elementos desta página a complementarão. Se, por acaso, esses elementos forem suficientes para preencher toda a página atual, ela não será carregada.');
+  var id = checkbox.getAttribute('rel');
+  var pos = sheets.findIndex(s => s.id == id);
+  if (checkbox.checked && pos > 0) {
+    sheets[pos].unionPreviousPage = true;
+  }
+  if (!checkbox.checked) {
+    sheets[pos].unionPreviousPage = false;
+    checkbox.checked = false;
+  }
+  if (pos <= 0 || sheets[pos-1] == undefined) {
+    alert('Primeira página.\nSem paginas anteiores para Unir!');
+    sheets[pos].unionPreviousPage = false;
+    checkbox.checked = false;
+  }
+}
+
+//INPUTS FORM SWITCH
+function inputEscolhido(type, property, el, label, options = [], iconSelect = null, tutorialPass = []) {
+
+  let tutorial = document.createElement('div');
+  tutorial.setAttribute('class', 'tutorialInputUse');
+  let b = document.createElement('b');
+  b.fontSize = '12px';
+  b.innerHTML = 'Como Usar:';
+  let ul = document.createElement('ul');
+  tutorialPass.forEach(e => {
+    let li = document.createElement('li');
+    li.innerHTML = '<b>'+e.key+':</b>&nbsp&nbsp'+e.value;
+    ul.append(li);
+  });
+  tutorial.append(b);
+  tutorial.append(ul);
+  
+  if(type == 'number') {
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('input');
+    inpAreaInput.setAttribute('type', 'number');
+    inpAreaInput.setAttribute('step', '0.02');
+    inpAreaInput.setAttribute('value', el[property]);
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = parseFloat(inpAreaInput.value);
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+    return inpArea;
+  }
+
+  if(type == 'checkbox') {
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+
+    let divCinpAreaInput = document.createElement('div');
+    divCinpAreaInput.style.display = 'flex';
+    divCinpAreaInput.style.justifyContent = 'center';
+    divCinpAreaInput.style.width = '100%';
+    divCinpAreaInput.style.marginLeft = '15px';
+    //divCinpAreaInput.style.fontSize = '10px';
+
+    let inpAreaInput = document.createElement('input');
+    inpAreaInput.setAttribute('type', 'checkbox');
+    inpAreaInput.setAttribute('id', el.id+'_checkbox_'+property);
+    if(el[property] == 1)inpAreaInput.checked = true;
+    if(el[property] == 0)inpAreaInput.checked = false;
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.style.width = '15px';
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = (inpAreaInput.checked) ? 1 : 0;
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+
+    let labelinpAreaInput = document.createElement('label');
+    labelinpAreaInput.style.fontSize = '10px';
+    labelinpAreaInput.setAttribute('for', el.id+'_checkbox_'+property);
+    labelinpAreaInput.textContent = ' SIM[X] ou NÃO[ ]';
+    labelinpAreaInput.style.width = 'calc(100% - 20px)';
+
+    divCinpAreaInput.append(inpAreaInput);
+    divCinpAreaInput.append(labelinpAreaInput);
+
+    inpArea.append(inpAreaSpan);
+    inpArea.append(divCinpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+    return inpArea;
+  }
+
+  if(type == 'select'){                
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('select');
+    inpAreaInput.style.width = '100%';
+    inpAreaInput.setAttribute('rel', property);
+    [...[{key: '', value: ''}], ...options].forEach(vs => {
+      var option = document.createElement('option');
+      let stringTextOPT = iconSelect+' | '+vs.value;
+      if(iconSelect == "" || (vs.value == "" && vs.key == "")) stringTextOPT = vs.value;
+      option.value = vs.key;
+      option.text = stringTextOPT;
+      if(vs.key == el[property]) option.selected = true;
+      inpAreaInput.appendChild(option);
+    })
+    inpAreaInput.addEventListener('change', function (ri) {
+      console.log(inpAreaInput.value);
+      console.log(property);
+      el.setParameterComponent(inpAreaInput.value, property);
+    })
+    el.addConnection('select', [property], inpAreaInput);
+
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+
+  if(type == 'text'){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('input');
+    inpAreaInput.setAttribute('type', 'text');
+    inpAreaInput.setAttribute('value', el[property]);
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = inpAreaInput.value;
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+
+  if(type == 'color'){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('input');
+    inpAreaInput.setAttribute('type', 'color');
+    inpAreaInput.setAttribute('value', el[property]);
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = inpAreaInput.value;
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+
+  if(type == 'imageSelect'){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+
+    let inpAreaInput = document.createElement('div');
+    inpAreaInput.setAttribute('class', 'listagemImages');
+
+    var removeOption = document.createElement('img');
+    removeOption.src = 'https://static.vecteezy.com/system/resources/previews/018/887/460/original/signs-close-icon-png.png';
+    removeOption.valUrl= '';
+    removeOption.rel=property;
+    inpAreaInput.appendChild(removeOption);
+
+    removeOption.addEventListener('click', function (ri) {
+      el.setParameterComponent('', property);
+    })
+
+    options.forEach(vs => {
+      var option = document.createElement('img');
+      option.src = vs.src;
+      option.valUrl= vs.url;
+      option.rel=property;
+      inpAreaInput.appendChild(option);
+
+      option.addEventListener('click', function (ri) {
+        el.setParameterComponent(vs, property);
+      })
+    })
+
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+
+  if(type == 'textarea'){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('textarea');
+    inpAreaInput.setAttribute('value', el[property]);
+    inpAreaInput.setAttribute('rows', '6');
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.value = el[property];
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = inpAreaInput.value;
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+}
 
 
 
@@ -1195,26 +2090,112 @@ function createFormFromElement(e) {
 viewManager.addEventListener('wheel', sheetpredominante);
 
 
+//KEYBOARD ACTIONS
+window.addEventListener('keydown', function(event) {  
+  if ((event.key === 'Z' || event.key === 'z') && (event.ctrlKey || event.metaKey)) {
+      if(selectedComponent.el != null){
+        selectedComponent.el.rollback();
+      }
+  }
+});
+
+window.addEventListener('keydown', function(event) {  
+  if ((event.key === 'C' || event.key === 'c') && (event.ctrlKey || event.metaKey)) {
+      if(selectedComponent.el != null){
+        cntrCComponent.el = selectedComponent.el;
+        cntrCComponent.np = selectedComponent.np;
+      }
+  }
+});
+
+window.addEventListener('keydown', function(event) {  
+  if ((event.key === 'V' || event.key === 'v') && (event.ctrlKey || event.metaKey)) {
+    console.log(cntrCComponent.el);
+      if(cntrCComponent.el != null){
+        cntrCComponent.el.copyPaste();
+        cntrCComponent.el = null;
+        cntrCComponent.np = null;
+      }
+  }
+});
+
 
 
 //BTN ACTIONS 
-document.querySelector('#publish').addEventListener('click', function (e) {
-  let alljs = '';
+document.querySelector('#publish.gen').addEventListener('click', function (e) {
+   /* let compsToPDF = [];
   sheets.forEach(s => {
-    s.components.forEach(c => {
-      const replacer = (key, value) => {
-        if (key === 'sheet' || key === 'sheet' || key === 'selfReference' || key === 'connections' || key === 'id') {
-          return undefined;
-        }
-        return value;
-      };
-      let r = JSON.stringify(c, replacer);
-      alljs += r;
-    });
-  });
+    compsToPDF = [...compsToPDF, ...mapeareOrdenarElementos(s.getSR().querySelector('.content'), s)];
+  }); */
 
-  console.log(alljs);
+  let compsToPDF = {};
+  sheets.forEach(s => {
+
+    if (compsToPDF[s.id]) {
+      // Se existe e é um array, adiciona o valor ao array existente
+      if (Array.isArray(compsToPDF[s.id])) {
+        compsToPDF[s.id].push(mapeareOrdenarElementos(s.getSR().querySelector('.content'), s));
+      } else {
+        // Se não for um array, cria um novo array com o valor
+        compsToPDF[s.id] = [compsToPDF[s.id], mapeareOrdenarElementos(s.getSR().querySelector('.content'), s)];
+      }
+    } else {
+      // Se não existe, cria um novo array com o valor
+      compsToPDF[s.id] = [mapeareOrdenarElementos(s.getSR().querySelector('.content'), s)];
+    }
+  });
+  const replacer = (key, value) => {
+    if (key === 'components'|| key === 'selfReference' || key === 'connections' || key === 'lastStatusOk') {
+      return undefined;
+    }
+    if (typeof value === 'boolean') {
+      return value ? 1 : 0;
+    }
+    return value;
+  };
+  let alljs = "{\"datas\": \"213\",\"sheets\": "+JSON.stringify(sheets, replacer)+" , \"componentes\": "+JSON.stringify(compsToPDF, replacer)+", \"comuns\": "+JSON.stringify(comumComponents, replacer)+"}";
+  generatePDFCodePHP(alljs);
 });
+
+document.querySelector('#publish.save').addEventListener('click', function (e) {
+ let compsToPDF = {};
+ sheets.forEach(s => {
+   if (compsToPDF[s.id]) {
+     if (Array.isArray(compsToPDF[s.id])) {
+       compsToPDF[s.id].push(mapeareOrdenarElementos(s.getSR().querySelector('.content'), s));
+     } else {
+       compsToPDF[s.id] = [compsToPDF[s.id], mapeareOrdenarElementos(s.getSR().querySelector('.content'), s)];
+     }
+   } else {
+     compsToPDF[s.id] = [mapeareOrdenarElementos(s.getSR().querySelector('.content'), s)];
+   }
+ });
+ const replacer = (key, value) => {
+   if (key === 'components'|| key === 'selfReference' || key === 'connections' || key === 'lastStatusOk') {
+     return undefined;
+   }
+   if (typeof value === 'boolean') {
+     return value ? 'true' : 'false';
+   }
+   return value;
+ };
+ let alljs = "{\"ACAO\":1, \"FILE\":\""+fileName+"\", \"defaultConfigurations\":"+JSON.stringify(defaultConfigurations)+",\"incrementPageId\":"+incrementPageId+",\"datas\": \"213\",\"sheets\": "+JSON.stringify(sheets, replacer)+" , \"componentes\": "+JSON.stringify(compsToPDF, replacer)+", \"comuns\": "+JSON.stringify(comumComponents, replacer)+"}";
+
+ //console.log(alljs);
+
+ sv(alljs).then((r) => {
+  console.log(r);
+  alert(r);
+ });
+});
+
+async function sv(alljs) {
+  return await savePDFJSON(alljs)
+};
+
+async function gt(rq) {
+  return await getPDFJSON(rq)
+};
 
 
 zoomActions.querySelector('.moreZoom').addEventListener('click', function (e) {
@@ -1244,8 +2225,33 @@ handleElements.addEventListener('click', function (e) {
     })
   })
   currentAction = 'HANDLE';
-  currentElement = null;
+  //currentElement = null;
 });
+
+function mapeareOrdenarElementos(contentElement, sheet) {
+  const elementos = Array.from(contentElement.children);
+  const elementosOrdenados = elementos.sort((a, b) => {
+      const posicaoVerticalA = a.offsetTop;
+      const posicaoVerticalB = b.offsetTop;
+      const posicaoHorizontalA = a.offsetLeft;
+      const posicaoHorizontalB = b.offsetLeft;
+
+      if (posicaoVerticalA !== posicaoVerticalB) {
+          return posicaoVerticalA - posicaoVerticalB;
+      } else {
+          return posicaoHorizontalA - posicaoHorizontalB;
+      }
+  });
+  let orderComponents = [];
+  elementosOrdenados.forEach(eh => {
+    let compInstance = sheet.components[sheet.components.findIndex(i => i.id == eh.getAttribute('rel'))];
+    if(compInstance != undefined) orderComponents.push(compInstance);
+  });
+
+  /* console.log(orderComponents); */
+  return orderComponents;
+}
+
 
 pagesListButton.addEventListener('click', function (e) {
   listSheetsArea.classList.toggle("show");
@@ -1255,15 +2261,23 @@ function elementsDropDown() {
   elementsButton.parentElement.parentElement.querySelector('#myDropDownElements').classList.toggle("show");
 };
 
-function selectedAddElement(e) {
+function selectedAddElement(e, fromHTML = true) {
   document.querySelectorAll('.sheet').forEach(s => {
     s.classList.remove('gragItems');
   })
-  let id = e.getAttribute('rel');
-  let indexEl = elementos.findIndex(item => item.id === Number(id));
+
+  let indexEl;
+
+  if(fromHTML){
+    let id = e.getAttribute('rel');
+    indexEl = elementos.findIndex(item => item.id === Number(id));
+  } else {
+    indexEl = elementos.findIndex(item => item.id === Number(e));
+  }
 
   document.querySelector('#currentElement').innerHTML = elementos[indexEl].nome;
   currentElement = elementos[indexEl].id;
+  console.log(currentElement);
   currentAction = 'CREATE';
   let esis = document.querySelectorAll('.sheet');
   esis.forEach((s) => {
@@ -1275,6 +2289,11 @@ function selectedAddElement(e) {
   })
   elementsDropDown();
 }
+
+document.querySelector('#currentElement').addEventListener('click', function () {
+  console.log(currentElement);
+  selectedAddElement(currentElement, false);
+})
 
 closeAreas.forEach(ca => {
   let element = ca.parentElement.parentElement;
@@ -1306,6 +2325,35 @@ openAreas.forEach(ca => {
 
 })
 
+function createAccordeonComumComponents() {
+  let pageAccordeon = document.createElement('div');
+  pageAccordeon.setAttribute('class', 'pageAccordeon');
+  pageAccordeon.setAttribute('rel', 'comumComponents');
+
+  let pageButtonAccordeon = document.createElement('div');
+  pageButtonAccordeon.setAttribute('class', 'pageButtonAccordeon');
+  pageButtonAccordeon.innerHTML = 'Componentes Comuns';
+
+  let pagePanelAcordeon = document.createElement('div');
+  pagePanelAcordeon.setAttribute('class', 'pagePanelAcordeon active');
+
+  pageAccordeon.append(pageButtonAccordeon);
+  pageAccordeon.append(pagePanelAcordeon);
+
+  pageButtonAccordeon.addEventListener('click', function (e) {
+    document.querySelectorAll('.pageAccordeon').forEach(ac => {
+      if (ac.getAttribute('rel') != 'comumComponents') {
+        ac.querySelector('.pageButtonAccordeon').classList.remove("active");
+        ac.querySelector('.pagePanelAcordeon').classList.remove("active");
+      }
+    })
+
+    pageButtonAccordeon.classList.toggle("active");
+    pagePanelAcordeon.classList.toggle("active");
+  })
+
+  listElementsArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', pageAccordeon);
+}
 
 //CRIAR PAGINA
 function criarpaginafe(e) {

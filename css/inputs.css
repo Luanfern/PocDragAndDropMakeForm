@@ -1,0 +1,56 @@
+.inpConfig{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start; 
+    margin: 8px 5px 5px 5px;
+    border: 1px solid #777;
+    border-radius: 4px;
+    padding:4px;
+  }
+  
+  .inpConfig span{
+    width:100%;
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .inpConfig input{
+    width:100%;
+    font-size: 12px;
+  }
+
+.inpConfig .listagemImages{
+    height: 220px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: scroll;
+}
+
+.inpConfig .listagemImages img{
+    height: 68px;
+    width: calc(50% - 2px);
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    margin: 1px;
+  }
+
+.tutorialInputUse{
+    trasition: 100ms;
+    display: none;
+}
+
+.inpConfig:hover .tutorialInputUse{
+    display: block;
+}
+
+.tutorialInputUse ul{
+    margin-top: 5px;
+    padding: 0;
+}
+
+.tutorialInputUse ul li{
+    font-size: 11px;
+}

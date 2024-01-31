@@ -78,3 +78,32 @@
     width:100%;
     font-size: 12px;
   }
+
+.configsContents{
+  width: 100%;
+  display:flex;
+  justify-content:space-around;
+}
+
+.configsContents .left{
+  width: 50%;
+  border-right: 1px solid #555;
+}
+
+.configsContents .right{
+  width: 50%;
+}
+
+.configsContents .right .sectionConfig, .configsContents .left .sectionConfig{
+  border-top: 1px solid #333;
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+} 
+
+.subtitle{
+  margin-left:20px;
+  width: calc(100% - 20px);
+}
