@@ -92,13 +92,13 @@ if(isset($_GET['FILE']) && !empty($_GET['FILE'])){
 
   <div id="backgroundManager"></div>
 
-  <div id="myModal" class="modal" style="display: block;">
+  <div id="myModal" class="modal">
     <div class="modal-content">
       <div class="modal-header">
         <div class="title">CONFIGURAÇÕES PADRÃO DO PROJETO:</div>
         <p class="close">&times;</p>
       </div>
-      <p style="font-size: 9px; margin-bottom:10px;">Essas configurações serão aplicadas somente na criação de uma nova página. É possível editar cada página individualmente.</p>
+      <p style="font-size: 9px; margin-bottom:10px; border: 1px solid red; padding: 4px; border-radius: 3px;">Essas configurações serão aplicadas somente na criação de uma nova página. Após a criação da página, é impossível a alteração da margem!</p>
       <div class="configsContents">
         <div class="left">
           <div class="sectionConfig">

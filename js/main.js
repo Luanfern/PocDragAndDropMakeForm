@@ -216,7 +216,11 @@ async function loadPDFJSON(json) {
   defaultConfigurations = jsonParsed.defaultConfigurations;
   
   jsonParsed.sheets.forEach(s => {
-    new SHEET(s.id, s.margem, []).createSheet();
+    new SHEET(s.id, {top: s.margem.top / s.hcm,
+      bottom: s.margem.bottom / s.hcm,
+      left: s.margem.left / s.wcm,
+      right: s.margem.right / s.wcm
+    }, []).createSheet();
     let sRef = sheets.find(function(objeto) {return objeto.id === s.id;});
     jsonParsed.componentes[s.id][0].forEach(c => {
       let elementInstance = elementos[elementos.findIndex(item => item.className === c.elementType)];
@@ -385,8 +389,8 @@ window.addEventListener('load', function () {
         configuracoes: {
           last: {
             icon: "",
-            label: "Último elemento da Linha",
-            type: "checkbox"
+            label: "Último elemento da Linha, padrão TRUE",
+            type: "hidden"
           },
           x: {
             icon: "",
@@ -479,8 +483,8 @@ window.addEventListener('load', function () {
         id: 3,
         nome: "Imagem",
         icon: " &#9633",
-        class: Image,
-        className: 'Image',
+        class: ImageBuild,
+        className: 'ImageBuild',
         configuracoes: {
           x: {
             icon: "",
@@ -492,6 +496,11 @@ window.addEventListener('load', function () {
             label: "eixo Y",
             type: "number"
           },
+          imageOriginal: {
+            icon: "",
+            label: "Tamanho original da Imagem",
+            type: "checkbox"
+          },
           width: {
             icon: "",
             label: "largura",
@@ -500,6 +509,11 @@ window.addEventListener('load', function () {
           height: {
             icon: "",
             label: "altura",
+            type: "number"
+          },
+          proporcionalSize: {
+            icon: "",
+            label: "tamanho (proporcional)",
             type: "number"
           },
           text: {
@@ -528,6 +542,9 @@ window.addEventListener('load', function () {
         console.log(r);
 
         loadPDFJSON(r).then(() => {
+
+          zoomActions.querySelector('.zoomValue').innerHTML = (Number(defaultConfigurations.zoomPctg) * 100).toFixed(2) + '%';
+          openModal();
 
           if (sheets.length == 0) {
             viewManager.insertAdjacentHTML('beforeend', '<div class="nosheetsExist" rel="temporary"><p>Sem páginas.</p><p><b>Para Iniciar, clique em: </b></p><p><div onclick="criarpaginafe(this)" class="btnMenu">&#43; Página</div></p></div>');
@@ -650,7 +667,38 @@ class ElementBase {
     let celulaInfo = celula;
     celula.setAttribute('class', 'componentPDF');
     celula.setAttribute("rel", this.id);
+    if(sheet.inClick && currentAction == 'HANDLE' && selectedComponent.el == this){
+      celulaInfo.classList.add('highlightMoving');
+    } else {
+      celulaInfo.classList.remove('highlightMoving');
+    }
     return celulaInfo;
+  }
+
+  copyPaste(){
+    alert('copy não implementado em todos os componentes!');
+
+  /*   let indexEl = elementos.findIndex(item => item.className === this.elementType);
+    let copy = Object.assign({}, this);
+    if (this.sheet.components.length > 0) {
+      let elId = Number(this.sheet.components.at(-1).id.split('_').at(-1))+1;
+      copy.id = Number(this.sheet.id)+'_'+elId;
+    }
+
+    if(this.last == 1){
+      //CALCULO PARA INSERIR EM BAIXO
+      copy.y = this.y + this.height;
+    } else {
+      //CALCULO PARA INSERIR AO LADO
+      copy.x = this.x + this.width;
+    }
+
+    copy.selfReference = [];
+    copy.lastStatusOk = null;
+    copy.connections = [];
+
+    let componentToCopy = new elementos[indexEl].class(copy);
+    this.sheet.addElementoToSheetHtml(componentToCopy); */
   }
 
   //SET PARAMETERS CALL
@@ -1028,47 +1076,72 @@ class MultiCelula extends CelulaBase{
   }
 }
 
-class Image extends ElementBase{
+class ImageBuild extends ElementBase{
   //'./PocDragAndDropMakeForm/img/NoImage.jpg'
   imagePath = '';
   extensionImage = '';
-  constructor({sheet, id, text = "DIRECTA Image!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = true, informacaoExterna = null}) {
+  imageOriginal = false;
+  proporcionalSize = 1;
+  constructor({sheet, id, text = "DIRECTA Image!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = true, informacaoExterna = null, imageOriginal = false, proporcionalSize = 1 }) {
     super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna});
-    this.elementType = 'Image';
+    this.elementType = 'ImageBuild';
+    this.imageOriginal = imageOriginal;
+    this.proporcionalSize = proporcionalSize;
     this.lastStatusOk = { ...this };
   }
 
   draw(sheet = this.sheet) {
-    let pStats = sheet.intoContentRect([{
-      x: (sheet.wcm * this.x),
-      y: (sheet.hcm * this.y)
-    }, {
-      x: (this.width + this.x) * sheet.wcm,
-      y: (this.height + this.y) * sheet.hcm
-    }], this.freeSheet, this.id, this.comum);
-
-    console.log(pStats);
 
     let celula = document.createElement("img");
-    let h = this.height;
-    let w = this.width;
-    //POSITION
-    celula.style.left = (sheet.wcm * this.x) + 'px';
-    celula.style.top = (sheet.hcm * this.y) + 'px';
-    //HEIGHT - WIDTH
-    celula.style.width = (sheet.wcm * w) + 'px';
-    celula.style.height = (sheet.hcm * h) + 'px';
 
+    let imageOnUse = '';
     if(this.informacaoExterna == '' || this.informacaoExterna == null){
       if(this.text.includes('http') && this.text.includes('://')){
-        celula.src = this.text;   
+        celula.src = this.text;
+        imageOnUse = this.text;
       } else {
         celula.src = './img/NoImage.jpg'; 
       }
     } else {
       this.imagePath = this.informacaoExterna;
       celula.src = this.imagePath.src;
+      imageOnUse = this.imagePath.src;
     }
+
+    if(this.imageOriginal){
+      let t = this;
+      let img = new Image();
+      img.onload = function () {
+        if(t.width != (this.width / t.sheet.wcm) || t.height != (this.height / t.sheet.hcm)){
+        t.setParameters(['width', 'height', 'proporcionalSize'], [(this.width / t.sheet.wcm), (this.height / t.sheet.hcm), 1]);
+        setTimeout(() => {
+          t.reDraw(t.draw());
+        }, 50);
+        }
+      }
+      img.src = imageOnUse;
+      img.remove();
+    }
+
+    let propHeight = this.height * this.proporcionalSize;
+    let propWidth = this.width * this.proporcionalSize;
+
+    //HEIGHT - WIDTH
+    celula.style.width = (sheet.wcm * propWidth) + 'px';
+    celula.style.height = (sheet.hcm * propHeight) + 'px';
+    //POSITION
+    celula.style.left = (sheet.wcm * this.x) + 'px';
+    celula.style.top = (sheet.hcm * this.y) + 'px';
+
+    let pStats = sheet.intoContentRect([{
+      x: (sheet.wcm * this.x),
+      y: (sheet.hcm * this.y)
+    }, {
+      x: (propWidth + this.x) * sheet.wcm,
+      y: (propHeight + this.y) * sheet.hcm
+    }], this.freeSheet, this.id, this.comum);
+
+    console.log(pStats);
 
     celula = this.especificacoesEstilo(celula, sheet);
     celula = this.drawObrigatorio(celula, sheet);
@@ -1135,7 +1208,7 @@ class SHEET {
     this.clickDropElementsSheet();
     this.createMiniSheet();
     setCurrentPage(this.id, true);
-    applyMargins(this.id, false);
+    applyMargins(this.id, this.margem);
     this.createAccordeonSheet();
 
     console.log('ADICIONANDO PÁGINA: ' + this.id)
@@ -1183,8 +1256,8 @@ class SHEET {
   }
 
   setSizeSheet(pctg) {
-    let x = (defaultConfigurations.zoom.x * pctg);
-    let y = (defaultConfigurations.zoom.y * pctg);
+    let x = (defaultConfigurations.zoom.x * defaultConfigurations.zoomPctg);
+    let y = (defaultConfigurations.zoom.y * defaultConfigurations.zoomPctg);
 
     // Get the element
     var element = this.getSR();
@@ -1194,10 +1267,10 @@ class SHEET {
     element.style.height = 'calc(2.65 * ' + y + 'px)';
 
     let m = {
-      t: (this.margem.top + 0.1) / this.hcm,
-      b: (this.margem.bottom + 0.1) / this.hcm,
-      l: (this.margem.left + 0.1) / this.wcm,
-      r: (this.margem.right + 0.1) / this.wcm
+      t: (this.margem.top) / this.hcm,
+      b: (this.margem.bottom) / this.hcm,
+      l: (this.margem.left) / this.wcm,
+      r: (this.margem.right) / this.wcm
     }
 
     this.wcm = 2.65 * x / this.width;
@@ -1264,6 +1337,11 @@ class SHEET {
     content.addEventListener('mousedown', function (e) {
       paiRef.inClick = true;
       if (currentAction == 'HANDLE') {
+        Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
+          c.classList.remove('highlight');
+          c.classList.add('NOhighlight');
+        });
+        e.target.classList.add('highlight');
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
           let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
@@ -1324,6 +1402,8 @@ class SHEET {
         paiRef.inClick = false;
         selectedComponentAnchorMove = null;
         paiRef.rectConstruct = [];
+        e.target.classList.remove('highlightMoving');
+        e.target.classList.add('highlight');
       }
       if (paiRef.inClick && currentAction == 'CREATE') {
         paiRef.inClick = false;
@@ -1382,6 +1462,7 @@ class SHEET {
         if (isFilho) {
           e.target.classList.add('highlight');
           e.target.classList.remove('NOhighlight');
+          e.target.classList.remove('highlightMoving');
         }
       }
     });
@@ -1395,6 +1476,7 @@ class SHEET {
           if (selectedComponent.el?.id != e.target.getAttribute('rel')) {
             e.target.classList.add('NOhighlight');
             e.target.classList.remove('highlight');
+            e.target.classList.remove('highlightMoving');
           }
         }
       }
@@ -1479,10 +1561,10 @@ class SHEET {
   //setMargin
   setMargem(top, bottom, left, right) {
     this.margem = {
-      "top": this.hcm * top,
-      "bottom": this.hcm * bottom,
-      "left": this.wcm * left,
-      "right": this.wcm * right
+      "top": (this.hcm * top) + 1,
+      "bottom": (this.hcm * bottom)+ 1,
+      "left": (this.wcm * left)+ 1,
+      "right": (this.wcm * right)+ 1
     };
     var marginsh = this.getSR().getElementsByClassName("mh");
     var marginsv = this.getSR().getElementsByClassName("mv");
@@ -1571,8 +1653,6 @@ function setCurrentPage(sheetClassId, doScroll, clickMiniPage = false) {
     });
   }
   if (clickMiniPage) {
-    modalConfId = sheetClassId;
-    openModal(false, sheetClassId)
     listSheetsArea.classList.toggle("show");
   }
 }
@@ -1584,27 +1664,18 @@ var configbtn = document.getElementById("config");
 var span = document.getElementsByClassName("close")[0];
 var btnapply = document.getElementsByClassName("btnapply")[0];
 configbtn.addEventListener('click', function (e) {
-  openModal(true);
+  openModal();
 });
 
-function openModal(g = true, sheetClassId = null) {
-  if (g) {
-    document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
-    document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
-    document.getElementById('horizontalME').value = defaultConfigurations.margens.left;
-    document.getElementById('horizontalMD').value = defaultConfigurations.margens.right;
-  } else {
-    let s = sheets[sheets.findIndex(i => i.id == sheetClassId)];
-    document.getElementById('verticalMT').value = s.margem.top / s.hcm;
-    document.getElementById('verticalMR').value = s.margem.bottom / s.hcm;
-    document.getElementById('horizontalME').value = s.margem.left / s.wcm;
-    document.getElementById('horizontalMD').value = s.margem.right / s.wcm;
-  }
+function openModal() {
+  document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
+  document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
+  document.getElementById('horizontalME').value = defaultConfigurations.margens.left;
+  document.getElementById('horizontalMD').value = defaultConfigurations.margens.right;
   modal.style.display = "block";
 }
 span.onclick = function () {
   modal.style.display = "none";
-  modalConfId = null;
   document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
   document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
   document.getElementById('horizontalME').value = defaultConfigurations.margens.left;
@@ -1612,13 +1683,10 @@ span.onclick = function () {
 }
 btnapply.onclick = function () {
   modal.style.display = "none";
-
-  applyMargins(modalConfId, modalConfId == null ? true : false);
-  modalConfId = null;
-  document.getElementById('verticalMT').value = defaultConfigurations.margens.top;
-  document.getElementById('verticalMR').value = defaultConfigurations.margens.bottom;
-  document.getElementById('horizontalME').value = defaultConfigurations.margens.left;
-  document.getElementById('horizontalMD').value = defaultConfigurations.margens.right;
+  defaultConfigurations.margens.top = document.getElementById('verticalMT').value;
+  defaultConfigurations.margens.bottom = document.getElementById('verticalMR').value;
+  defaultConfigurations.margens.left = document.getElementById('horizontalME').value;
+  defaultConfigurations.margens.right = document.getElementById('horizontalMD').value;
 
 }
 window.onclick = function (event) {
@@ -1628,26 +1696,9 @@ window.onclick = function (event) {
 }
 
 //MARGINS
-function applyMargins(sheetClassId, all = false, mgsFix = null) {
-  const iverticalMT = document.getElementById('verticalMT').value;
-  const iverticalMR = document.getElementById('verticalMR').value;
-  const ihorizontalME = document.getElementById('horizontalME').value;
-  const ihorizontalMD = document.getElementById('horizontalMD').value;
-
-  if (all) {
-    sheets.forEach((s) => {
-      s.setMargem(iverticalMT, iverticalMR, ihorizontalME, ihorizontalMD);
-    })
-  } else {
-
+function applyMargins(sheetClassId, margins = null) {
     let sheet = sheets[sheets.findIndex((sheet) => sheet.id === sheetClassId)];
-    if(mgsFix == null){
-      sheet.setMargem(iverticalMT, iverticalMR, ihorizontalME, ihorizontalMD);
-    } else {
-      sheet.setMargem(mgsFix.top, mgsFix.bottom, mgsFix.left, mgsFix.right);
-    }
-  }
-
+    if(margins != null) sheet.setMargem(margins.top, margins.bottom, margins.left , margins.right);
 }
 
 //CHANGE PAGE WHEN SCROLL
@@ -1970,6 +2021,29 @@ function inputEscolhido(type, property, el, label, options = [], iconSelect = nu
     return inpArea;
   }
 
+  if(type == 'hidden'){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', el.id);
+    let inpAreaSpan = document.createElement('span');
+    inpAreaSpan.innerHTML = label;
+    let inpAreaInput = document.createElement('input');
+    inpAreaInput.setAttribute('type', 'hidden');
+    inpAreaInput.setAttribute('value', el[property]);
+    inpAreaInput.setAttribute('rel', property);
+    inpAreaInput.addEventListener('change', function (ri) {
+      let vr = inpAreaInput.value;
+      el.setParameterComponent(vr, property);
+    })
+    el.addConnection('input', [property], inpAreaInput);
+    inpArea.append(inpAreaSpan);
+    inpArea.append(inpAreaInput);
+    if(tutorialPass.length > 0) inpArea.append(tutorial);
+
+
+    return inpArea;
+  }
+
   if(type == 'text'){
     let inpArea = document.createElement('div');
     inpArea.setAttribute('class', 'inpConfig');
@@ -2119,6 +2193,13 @@ window.addEventListener('keydown', function(event) {
   }
 });
 
+window.addEventListener('keydown', function(event) {  
+  if (event.key === 'DELETE' || event.key === 'Delete') {
+    if(selectedComponent.el != null){
+      
+    }
+  }
+});
 
 
 //BTN ACTIONS 
@@ -2357,7 +2438,7 @@ function createAccordeonComumComponents() {
 
 //CRIAR PAGINA
 function criarpaginafe(e) {
-  new SHEET(incrementPageId).createSheet();
+  new SHEET(incrementPageId, defaultConfigurations.margens).createSheet();
   incrementPageId = incrementPageId + 1;
 }
 newPageButton.addEventListener("click", criarpaginafe);
