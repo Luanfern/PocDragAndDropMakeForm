@@ -671,6 +671,7 @@ class ElementBase {
       celulaInfo.classList.add('highlightMoving');
     } else {
       celulaInfo.classList.remove('highlightMoving');
+      celulaInfo.classList.add('NOhighlight');
     }
     return celulaInfo;
   }
@@ -1497,10 +1498,13 @@ class SHEET {
       r = this.getSR().getBoundingClientRect().width;
       b = this.getSR().getBoundingClientRect().height;
     } else {
-      l = this.margem.left;
-      t = this.margem.top;
-      r = this.getSR().getBoundingClientRect().width - this.margem.right;
-      b = this.getSR().getBoundingClientRect().height - this.margem.bottom;
+
+      // - 1 : Feito para ignorar as linhas de 1px das margens!
+
+      l = this.margem.left - 0.1;
+      t = this.margem.top - 0.1;
+      r = this.getSR().getBoundingClientRect().width - (this.margem.right - 0.1);
+      b = this.getSR().getBoundingClientRect().height - (this.margem.bottom - 0.1);
 
     }
     let retInto = true;
@@ -1561,10 +1565,10 @@ class SHEET {
   //setMargin
   setMargem(top, bottom, left, right) {
     this.margem = {
-      "top": (this.hcm * top) + 1,
-      "bottom": (this.hcm * bottom)+ 1,
-      "left": (this.wcm * left)+ 1,
-      "right": (this.wcm * right)+ 1
+      "top": (this.hcm * top),
+      "bottom": (this.hcm * bottom),
+      "left": (this.wcm * left),
+      "right": (this.wcm * right)
     };
     var marginsh = this.getSR().getElementsByClassName("mh");
     var marginsv = this.getSR().getElementsByClassName("mv");
@@ -1592,10 +1596,10 @@ class SHEET {
     content.style.padding = this.margem.top + "px " + this.margem.right + "px " + this.margem.bottom + "px " + this.margem.left + "px;";
 
     this.margem = {
-      "top": (this.hcm * top) - 0.1,
-      "bottom": (this.hcm * bottom) - 0.1,
-      "left": (this.wcm * left) - 0.1,
-      "right": (this.wcm * right) - 0.1
+      "top": (this.hcm * top),
+      "bottom": (this.hcm * bottom),
+      "left": (this.wcm * left),
+      "right": (this.wcm * right)
     };
 
   }
