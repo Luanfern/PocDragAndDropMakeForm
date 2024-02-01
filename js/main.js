@@ -1873,18 +1873,22 @@ function createFormFromElement(e) {
   let inpArea = document.createElement('div');
   inpArea.setAttribute('class', 'inpConfig');
   inpArea.setAttribute('rel', e.id);
-  let btnComum = document.createElement('button');
-  btnComum.innerHTML = "Tornar Comum";
-  btnComum.setAttribute("type", "button");
-  inpArea.append(btnComum);
+  if(e.freeSheet){
+    let btnComum = document.createElement('button');
+    btnComum.innerHTML = "Tornar Comum";
+    btnComum.setAttribute("type", "button");
+    inpArea.append(btnComum);
+  }
   configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
 
-  btnComum.addEventListener("click", function() {
-    var result = window.confirm("Tornar o elemento "+e.text+" comum ? (irreversível)");
-    if (result) {
-      e.changeComumComponent();
-    }
-  });
+  if(e.freeSheet){
+    btnComum.addEventListener("click", function() {
+      var result = window.confirm("Tornar o elemento "+e.text+" comum ? (irreversível)");
+      if (result) {
+        e.changeComumComponent();
+      }
+    });
+  }
 }
 
 function unirPaginaAnterior(checkbox) {
