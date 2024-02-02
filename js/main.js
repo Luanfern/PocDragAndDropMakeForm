@@ -192,6 +192,11 @@ let selectedComponent = {
   }
 };
 
+let mousePositionPage = {
+  x: 0,
+  y: 0
+}
+
 let cntrCComponent = {
   np: null,
   el: {
@@ -539,12 +544,12 @@ window.addEventListener('load', function () {
       createAccordeonComumComponents();
 
       gt("{\"ACAO\":2, \"FILE\":\""+fileName+"\"}").then((r) => {
-        console.log(r);
+        //console.log(r);
 
         loadPDFJSON(r).then(() => {
 
           zoomActions.querySelector('.zoomValue').innerHTML = (Number(defaultConfigurations.zoomPctg) * 100).toFixed(2) + '%';
-          openModal();
+          //openModal();
 
           if (sheets.length == 0) {
             viewManager.insertAdjacentHTML('beforeend', '<div class="nosheetsExist" rel="temporary"><p>Sem páginas.</p><p><b>Para Iniciar, clique em: </b></p><p><div onclick="criarpaginafe(this)" class="btnMenu">&#43; Página</div></p></div>');
@@ -676,7 +681,7 @@ class ElementBase {
     return celulaInfo;
   }
 
-  copyPaste(){
+  copyPaste(typePaste = 1){
     alert('copy não implementado em todos os componentes!');
 
   /*   let indexEl = elementos.findIndex(item => item.className === this.elementType);
@@ -793,7 +798,6 @@ class ElementBase {
     if(this.lastStatusOk != null){
       Object.assign(this, this.lastStatusOk);
       let elementInstance = elementos[elementos.findIndex(item => item.className === this.elementType)];
-      console.log(elementInstance);
       Object.keys(elementInstance?.configuracoes).forEach(cnfops => {
         if(this[cnfops] != this.lastStatusOk[cnfops] && this.lastStatusOk[cnfops] != undefined){
           this.setParameterComponent(this.lastStatusOk[cnfops], cnfops);
@@ -844,7 +848,6 @@ class ElementBase {
     try {
       console.log('deletando');
       if(this.comum) {
-        console.log(this.getSR(true));
         comumComponents.splice(comumComponents.findIndex(c => c.id == this.id), 1);
         this.getSR(true).forEach(c => {
           c.parentElement.removeChild(c);
@@ -885,8 +888,6 @@ class ElementBase {
     repEl.parentNode.removeChild(repEl);
     configSheetArea.querySelector('.currentElement').textContent = 'Sem Elemento...';
     configSheetArea.querySelector('.contentAUX').innerHTML = '';
-
-    console.log(comumComponents);
   }
 }
 
@@ -902,7 +903,7 @@ class CelulaBase extends ElementBase {
   bordercolor = "#ffffff";
   last = 0; //
   link = ""; //
-  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = '', tcolor = "#000000", talign = "C", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = '', tcolor = "#000000", talign = "C", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "T", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
     super({sheet, id, text, x, y, width, height, freeSheet, comum, informacaoExterna});
     this.last = last;
     this.link = link;
@@ -1011,7 +1012,7 @@ class CelulaBase extends ElementBase {
     return celulaStyle;
   }
 
-  copyPaste(){
+  copyPaste(typePaste = 1){
 
     let indexEl = elementos.findIndex(item => item.className === this.elementType);
     let copy = Object.assign({}, this);
@@ -1020,12 +1021,28 @@ class CelulaBase extends ElementBase {
       copy.id = Number(this.sheet.id)+'_'+elId;
     }
 
-    if(this.last == 1){
-      //CALCULO PARA INSERIR EM BAIXO
-      copy.y = this.y + this.height;
-    } else {
-      //CALCULO PARA INSERIR AO LADO
-      copy.x = this.x + this.width;
+    if(typePaste == 1){
+      //COLAR NO LUGAR DO MOUSE
+      console.log(mousePositionPage);
+      copy.x = mousePositionPage.x;
+      copy.y = mousePositionPage.y;
+    } else if(typePaste == 2){
+      let down = mousePositionPage.y - this.y+this.height;
+      let up = (mousePositionPage.y - this.y)*-1;
+      let left = (mousePositionPage.x - this.x)*-1;
+      let right = mousePositionPage.x - this.x+this.height;
+
+      if(up > 0){
+        copy.y = this.y - this.height;
+      } else if(left > 0){
+        copy.x = this.x - this.width;
+      } else if(down >= right){
+        copy.y = this.y + this.height;
+      } else if(right > down) {
+        copy.x = this.x + this.width;
+      }else {
+        alert('ERROR ON PASTE ACTION!');
+      }
     }
 
     copy.selfReference = [];
@@ -1039,7 +1056,7 @@ class CelulaBase extends ElementBase {
 
 class Celula extends CelulaBase{
   
-  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "T", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
     super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna, tcolor , talign , tfont, tsize , tweight , bcolor , border, borderwidth, bordercolor, last, link});
     this.elementType = 'Celula';
     this.lastStatusOk = { ...this };
@@ -1060,7 +1077,7 @@ class Celula extends CelulaBase{
 }
 
 class MultiCelula extends CelulaBase{
-  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "B", borderwidth = 0.04, bordercolor = "#FF0000", last = 0, link = ""}) {
+  constructor({sheet, id, text = "DIRECTA TEXT!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = false, informacaoExterna = null, tcolor = "#000000", talign = "L", tfont = "Arial", tsize = 7, tweight = "", bcolor = "#ffffff", border = "T", borderwidth = 0.04, bordercolor = "#FF0000", last = 1, link = ""}) {
     super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna, tcolor , talign , tfont, tsize , tweight , bcolor , border, borderwidth, bordercolor, last, link});
     this.elementType = 'MultiCelula';
     this.height = (parseFloat(this.tsize+2) / (72 / 2.56));
@@ -1212,8 +1229,6 @@ class SHEET {
     applyMargins(this.id, this.margem);
     this.createAccordeonSheet();
 
-    console.log('ADICIONANDO PÁGINA: ' + this.id)
-
     if (document.querySelector('.nosheetsExist')) {
       document.querySelector('.nosheetsExist').parentElement.removeChild(document.querySelector('.nosheetsExist'));
     }
@@ -1237,7 +1252,6 @@ class SHEET {
     let qs = document.querySelector('.minisheet[rel="'+this.id+'"] .excluirPagina');
     qs.addEventListener('click', function (e) {
       let depend = sheets[sheets.findIndex(s => s.unionPreviousPage == paiRef.id)];
-      console.log(depend);
       if(depend != undefined) {
         alert('Outra(s) página(s) dependem dessa. Delete elas para prosseguir.');
         return false;
@@ -1342,6 +1356,7 @@ class SHEET {
           c.classList.remove('highlight');
           c.classList.add('NOhighlight');
         });
+        e.target.classList.remove('NOhighlight');
         e.target.classList.add('highlight');
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
@@ -1349,7 +1364,6 @@ class SHEET {
           if(el == undefined) {
             el = comumComponents[comumComponents.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
           }
-          console.log(paiRef.components);
           selectComponent(paiRef.id, el);
           const rect = el.getSR().getBoundingClientRect();
           const mouseX = e.clientX - rect.left;
@@ -1364,7 +1378,6 @@ class SHEET {
         if (currentElement == null && currentAction == null) {
           alert('nenhum elemento selecionado!');
         } else {
-          console.log(e.button)
           switch (e.button) {
             case 0:
               var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
@@ -1445,6 +1458,9 @@ class SHEET {
         selectAreaMouse.style.width = mouseX - paiRef.rectConstruct[0].x + 'px';
         selectAreaMouse.style.height = mouseY - paiRef.rectConstruct[0].y + 'px';
       }
+
+      mousePositionPage.x = ((mouseX) / paiRef.wcm).toFixed(1);
+      mousePositionPage.y = ((mouseY) / paiRef.hcm).toFixed(1);
       tip.querySelector('.coordXSheet').innerHTML = ((mouseX) / paiRef.wcm).toFixed(1);
       tip.querySelector('.coordYSheet').innerHTML = ((mouseY) / paiRef.hcm).toFixed(1);
 
@@ -1779,7 +1795,6 @@ function addToMyElements(el, np) {
       if (el.deleteMe()) {
         me.parentNode.removeChild(me);
         if (configSheetArea.querySelectorAll('.contentAUX .inpConfig')[0].getAttribute('rel') == el.id) {
-          console.log(configSheetArea.querySelector('.contentAUX').innerHTML);
           configSheetArea.querySelector('.currentElement').textContent = 'Sem Elemento...';
           configSheetArea.querySelector('.contentAUX').innerHTML = '';
         }
@@ -1874,18 +1889,15 @@ function createFormFromElement(e) {
   }
 
   //TORNAR COMUM ENTRE PAGINAS
-  let inpArea = document.createElement('div');
-  inpArea.setAttribute('class', 'inpConfig');
-  inpArea.setAttribute('rel', e.id);
   if(e.freeSheet){
+    let inpArea = document.createElement('div');
+    inpArea.setAttribute('class', 'inpConfig');
+    inpArea.setAttribute('rel', e.id);
     let btnComum = document.createElement('button');
     btnComum.innerHTML = "Tornar Comum";
     btnComum.setAttribute("type", "button");
     inpArea.append(btnComum);
-  }
-  configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
-
-  if(e.freeSheet){
+    configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
     btnComum.addEventListener("click", function() {
       var result = window.confirm("Tornar o elemento "+e.text+" comum ? (irreversível)");
       if (result) {
@@ -2015,8 +2027,6 @@ function inputEscolhido(type, property, el, label, options = [], iconSelect = nu
       inpAreaInput.appendChild(option);
     })
     inpAreaInput.addEventListener('change', function (ri) {
-      console.log(inpAreaInput.value);
-      console.log(property);
       el.setParameterComponent(inpAreaInput.value, property);
     })
     el.addConnection('select', [property], inpAreaInput);
@@ -2192,14 +2202,22 @@ window.addEventListener('keydown', function(event) {
 
 window.addEventListener('keydown', function(event) {  
   if ((event.key === 'V' || event.key === 'v') && (event.ctrlKey || event.metaKey)) {
-    console.log(cntrCComponent.el);
       if(cntrCComponent.el != null){
-        cntrCComponent.el.copyPaste();
+        cntrCComponent.el.copyPaste(1);
         cntrCComponent.el = null;
         cntrCComponent.np = null;
       }
   }
 });
+
+window.addEventListener('keydown', function(event) {  
+  if ((event.key === 'B' || event.key === 'b') && (event.ctrlKey || event.metaKey)) {
+      if(cntrCComponent.el != null){
+        cntrCComponent.el.copyPaste(2);
+      }
+  }
+});
+
 
 window.addEventListener('keydown', function(event) {  
   if (event.key === 'DELETE' || event.key === 'Delete') {
@@ -2269,8 +2287,6 @@ document.querySelector('#publish.save').addEventListener('click', function (e) {
    return value;
  };
  let alljs = "{\"ACAO\":1, \"FILE\":\""+fileName+"\", \"defaultConfigurations\":"+JSON.stringify(defaultConfigurations)+",\"incrementPageId\":"+incrementPageId+",\"datas\": \"213\",\"sheets\": "+JSON.stringify(sheets, replacer)+" , \"componentes\": "+JSON.stringify(compsToPDF, replacer)+", \"comuns\": "+JSON.stringify(comumComponents, replacer)+"}";
-
- //console.log(alljs);
 
  sv(alljs).then((r) => {
   console.log(r);
@@ -2366,7 +2382,6 @@ function selectedAddElement(e, fromHTML = true) {
 
   document.querySelector('#currentElement').innerHTML = elementos[indexEl].nome;
   currentElement = elementos[indexEl].id;
-  console.log(currentElement);
   currentAction = 'CREATE';
   let esis = document.querySelectorAll('.sheet');
   esis.forEach((s) => {
@@ -2380,7 +2395,6 @@ function selectedAddElement(e, fromHTML = true) {
 }
 
 document.querySelector('#currentElement').addEventListener('click', function () {
-  console.log(currentElement);
   selectedAddElement(currentElement, false);
 })
 
