@@ -179,11 +179,28 @@ let defaultConfigurations = {
 
 modalConfId = null;
 
+let shiftPressed = false;
+
+let ctrlPressed = false;
+
 let elementos = []
 
 let incrementPageId = 1;
 
 let currentElement = null;
+
+let selectedGroupComponentsProvSquare = {
+  x: 21,
+  y: 29,
+  w: 0,
+  h: 0,
+  moving: false,
+  draw: {
+    x: 0,
+    y: 0
+  }
+};
+let selectedGroupComponents = [];
 
 let selectedComponent = {
   np: null,
@@ -196,6 +213,11 @@ let mousePositionPage = {
   x: 0,
   y: 0
 }
+
+let cntrCGroupComponent = {
+  np: null,
+  el: []
+};
 
 let cntrCComponent = {
   np: null,
@@ -301,22 +323,26 @@ window.addEventListener('load', function () {
           x: {
             icon: "",
             label: "eixo X",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           y: {
             icon: "",
             label: "eixo Y",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           width: {
             icon: "",
             label: "largura",
-            type: "number"
+            type: "number",
+            step: "0.5"
           },
           height: {
             icon: "",
             label: "altura",
-            type: "number"
+            type: "number",
+            step: "0.5"
           },
           talign: {
             icon: "📏",
@@ -333,7 +359,8 @@ window.addEventListener('load', function () {
           tsize: {
             icon: "",
             label: "tamanho do texto",
-            type: "number"
+            type: "number",
+            step: "1"
           },
           tweight: {
             icon: "",
@@ -371,7 +398,8 @@ window.addEventListener('load', function () {
           borderwidth: {
             icon: "",
             label: "tamanho da borda",
-            type: "number"
+            type: "number",
+            step: "0.02"
           },
           bordercolor: {
             icon: "",
@@ -400,22 +428,26 @@ window.addEventListener('load', function () {
           x: {
             icon: "",
             label: "eixo X",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           y: {
             icon: "",
             label: "eixo Y",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           width: {
             icon: "",
             label: "largura",
-            type: "number"
+            type: "number",
+            step: "0.5"
           },
           height: {
             icon: "",
             label: "altura das linhas",
-            type: "number"
+            type: "number",
+            step: "0.4"
           },
           talign: {
             icon: "📏",
@@ -432,7 +464,8 @@ window.addEventListener('load', function () {
           tsize: {
             icon: "",
             label: "tamanho do texto",
-            type: "number"
+            type: "number",
+            step: "1"
           },
           tweight: {
             icon: "",
@@ -470,7 +503,8 @@ window.addEventListener('load', function () {
           borderwidth: {
             icon: "",
             label: "tamanho da borda",
-            type: "number"
+            type: "number",
+            step: "0.02"
           },
           bordercolor: {
             icon: "",
@@ -494,12 +528,14 @@ window.addEventListener('load', function () {
           x: {
             icon: "",
             label: "eixo X",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           y: {
             icon: "",
             label: "eixo Y",
-            type: "number"
+            type: "number",
+            step: "0.1"
           },
           imageOriginal: {
             icon: "",
@@ -509,17 +545,19 @@ window.addEventListener('load', function () {
           width: {
             icon: "",
             label: "largura",
-            type: "number"
+            type: "number",
+            step: "0.5"
           },
           height: {
             icon: "",
             label: "altura",
-            type: "number"
+            type: "number",
+            step: "0.5"
           },
-          proporcionalSize: {
+          sizeLink: {
             icon: "",
-            label: "tamanho (proporcional)",
-            type: "number"
+            label: "LINK LARGURA-ALTURA (proporcional)",
+            type: "checkbox"
           },
           text: {
             icon: "",
@@ -780,7 +818,6 @@ class ElementBase {
     p.forEach((pi, k) => {
       this[pi] = v[k]
     })
-
     this.lastStatusOk = { ...this };
     this.updateConnectionsINF();
   }
@@ -1012,37 +1049,53 @@ class CelulaBase extends ElementBase {
     return celulaStyle;
   }
 
-  copyPaste(typePaste = 1){
+  copyPaste(typePaste = 1, x = null, y = null){
 
     let indexEl = elementos.findIndex(item => item.className === this.elementType);
     let copy = Object.assign({}, this);
     if (this.sheet.components.length > 0) {
-      let elId = Number(this.sheet.components.at(-1).id.split('_').at(-1))+1;
+      let mid = 0;
+      this.sheet.components.forEach((e) => {
+          let t = Number(e.id.split('_')[1]);
+          if(t > mid){
+            mid = t;
+          }
+        });
+      let elId = Number(mid) + 1;
       copy.id = Number(this.sheet.id)+'_'+elId;
     }
 
     if(typePaste == 1){
       //COLAR NO LUGAR DO MOUSE
-      console.log(mousePositionPage);
-      copy.x = mousePositionPage.x;
-      copy.y = mousePositionPage.y;
+      if(this.width >= ((this.sheet.width - ((this.sheet.margem.left + this.sheet.margem.right)  / this.sheet.wcm))*0.75)){
+        copy.x = (this.sheet.margem.left / this.sheet.wcm);
+        copy.y = (mousePositionPage.y - this.height/2);
+      } else {
+        copy.x = (mousePositionPage.x - this.width/2);
+        copy.y = (mousePositionPage.y - this.height/2);
+      }
     } else if(typePaste == 2){
-      let down = mousePositionPage.y - this.y+this.height;
+      let down = mousePositionPage.y - (this.y+this.height);
       let up = (mousePositionPage.y - this.y)*-1;
       let left = (mousePositionPage.x - this.x)*-1;
-      let right = mousePositionPage.x - this.x+this.height;
+      let right = mousePositionPage.x - (this.x+this.width);
 
       if(up > 0){
-        copy.y = this.y - this.height;
+        copy.y = (this.y - this.height) - 0.01;
       } else if(left > 0){
         copy.x = this.x - this.width;
       } else if(down >= right){
-        copy.y = this.y + this.height;
+        console.log('down');
+        copy.y = (this.y + this.height) + 0.01;
+        console.log(copy.y);
       } else if(right > down) {
         copy.x = this.x + this.width;
       }else {
         alert('ERROR ON PASTE ACTION!');
       }
+    } else if(typePaste == 3){
+      copy.x = x;
+      copy.y = y;
     }
 
     copy.selfReference = [];
@@ -1099,12 +1152,13 @@ class ImageBuild extends ElementBase{
   imagePath = '';
   extensionImage = '';
   imageOriginal = false;
-  proporcionalSize = 1;
-  constructor({sheet, id, text = "DIRECTA Image!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = true, informacaoExterna = null, imageOriginal = false, proporcionalSize = 1 }) {
+  proporcionalSize = 0;
+  sizeLink = true;
+  constructor({sheet, id, text = "DIRECTA Image!", x = 0, y = 0, width = 10, height = 0.4, freeSheet = false, comum = true, informacaoExterna = null, imageOriginal = false, sizeLink = true }) {
     super({sheet, id, text, x, y, width , height , freeSheet, comum, informacaoExterna});
     this.elementType = 'ImageBuild';
     this.imageOriginal = imageOriginal;
-    this.proporcionalSize = proporcionalSize;
+    this.sizeLink = sizeLink;
     this.lastStatusOk = { ...this };
   }
 
@@ -1131,35 +1185,48 @@ class ImageBuild extends ElementBase{
       let img = new Image();
       img.onload = function () {
         if(t.width != (this.width / t.sheet.wcm) || t.height != (this.height / t.sheet.hcm)){
-        t.setParameters(['width', 'height', 'proporcionalSize'], [(this.width / t.sheet.wcm), (this.height / t.sheet.hcm), 1]);
+        t.setParameters(['width', 'height', 'sizeLink'], [(this.width / t.sheet.wcm), (this.height / t.sheet.hcm), true]);
         setTimeout(() => {
           t.reDraw(t.draw());
-        }, 50);
+        }, 85);
         }
       }
       img.src = imageOnUse;
       img.remove();
     }
 
-    let propHeight = this.height * this.proporcionalSize;
-    let propWidth = this.width * this.proporcionalSize;
-
-    //HEIGHT - WIDTH
-    celula.style.width = (sheet.wcm * propWidth) + 'px';
-    celula.style.height = (sheet.hcm * propHeight) + 'px';
-    //POSITION
-    celula.style.left = (sheet.wcm * this.x) + 'px';
-    celula.style.top = (sheet.hcm * this.y) + 'px';
+    if(this.sizeLink){
+      if(this.lastStatusOk.height != this.height && this.lastStatusOk.width == this.width){
+        this.proporcionalSize = this.height/this.lastStatusOk.height;
+        this.width = this.width*this.proporcionalSize;
+      } else if(this.lastStatusOk.width != this.width && this.lastStatusOk.height == this.height){
+        this.proporcionalSize = this.width/this.lastStatusOk.width;
+        this.height = this.height*this.proporcionalSize;
+      }
+    } else {
+      this.proporcionalSize = 0;
+    }
 
     let pStats = sheet.intoContentRect([{
       x: (sheet.wcm * this.x),
       y: (sheet.hcm * this.y)
     }, {
-      x: (propWidth + this.x) * sheet.wcm,
-      y: (propHeight + this.y) * sheet.hcm
+      x: (this.width + this.x) * sheet.wcm,
+      y: (this.height + this.y) * sheet.hcm
     }], this.freeSheet, this.id, this.comum);
 
-    console.log(pStats);
+    if(pStats.retInto == false && this.sizeLink){
+      this.height = this.lastStatusOk.height;
+      this.width = this.lastStatusOk.width;
+
+    }
+
+    //HEIGHT - WIDTH
+    celula.style.width = (sheet.wcm * this.width) + 'px';
+    celula.style.height = (sheet.hcm * this.height) + 'px';
+    //POSITION
+    celula.style.left = (sheet.wcm * this.x) + 'px';
+    celula.style.top = (sheet.hcm * this.y) + 'px';
 
     celula = this.especificacoesEstilo(celula, sheet);
     celula = this.drawObrigatorio(celula, sheet);
@@ -1348,31 +1415,107 @@ class SHEET {
     let content = this.selfReference.querySelector('.content');
     let selectAreaMouse = document.createElement('div');
     selectAreaMouse.setAttribute('class', 'selectAreaMouse');
+    let point = document.createElement('div');
+    point.setAttribute('class', 'flutpoint');
+
+    let dndraw = true;
 
     content.addEventListener('mousedown', function (e) {
       paiRef.inClick = true;
       if (currentAction == 'HANDLE') {
-        Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
-          c.classList.remove('highlight');
-          c.classList.add('NOhighlight');
-        });
-        e.target.classList.remove('NOhighlight');
-        e.target.classList.add('highlight');
-        const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
-        if (isFilho) {
-          let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
-          if(el == undefined) {
-            el = comumComponents[comumComponents.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
-          }
-          selectComponent(paiRef.id, el);
-          const rect = el.getSR().getBoundingClientRect();
-          const mouseX = e.clientX - rect.left;
-          const mouseY = e.clientY - rect.top;
-
-          selectedComponentAnchorMove = {
+        if(shiftPressed){
+          selectedGroupComponents = [];
+          var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
+          var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
+          content.append(selectAreaMouse);
+          selectAreaMouse.style.top = mouseY + 'px';
+          selectAreaMouse.style.left = mouseX + 'px';
+          selectAreaMouse.style.width = '0px';
+          selectAreaMouse.style.height = '0px';
+          paiRef.rectConstruct.push({
             x: mouseX,
             y: mouseY
-          };
+          });
+        } else {
+          const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
+          if (isFilho) {
+            let el = paiRef.components[paiRef.components.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
+            if(el == undefined) {
+              el = comumComponents[comumComponents.findIndex(cm => cm.id == e.target.getAttribute('rel'))];
+            }
+            if(content.querySelector('.flutpoint') != null){
+              content.removeChild(content.querySelector('.flutpoint'));
+            }
+            if(ctrlPressed){
+              if(!selectedGroupComponents.includes(el)) {
+                selectedGroupComponents.push(el);
+                e.target.classList.remove('NOhighlight');
+                e.target.classList.add('highlight');
+              } else {
+                selectedGroupComponents.splice(selectedGroupComponents.findIndex(efd => efd.id == el.id), 1);
+                e.target.classList.add('NOhighlight');
+                e.target.classList.remove('highlight');
+              }
+
+              selectedGroupComponentsProvSquare.x = 21;
+              selectedGroupComponentsProvSquare.y = 29;
+              selectedGroupComponentsProvSquare.w = 0;
+              selectedGroupComponentsProvSquare.h = 0;
+              selectedGroupComponents.forEach(sgc => {
+                if(sgc.x < selectedGroupComponentsProvSquare.x){
+                  selectedGroupComponentsProvSquare.x = sgc.x;
+                }
+                if(sgc.y < selectedGroupComponentsProvSquare.y){
+                  selectedGroupComponentsProvSquare.y = sgc.y;
+                }
+                if((sgc.x + sgc.width) > selectedGroupComponentsProvSquare.w){
+                  selectedGroupComponentsProvSquare.w = (sgc.x + sgc.width);
+                }
+                if((sgc.y + sgc.height) > selectedGroupComponentsProvSquare.h){
+                  selectedGroupComponentsProvSquare.h = (sgc.y + sgc.height);
+                }
+              });
+
+              
+              point.style.top = (selectedGroupComponentsProvSquare.y * paiRef.hcm)+'px';
+              point.style.left = (selectedGroupComponentsProvSquare.x* paiRef.wcm)+'px';
+              point.style.width = ((selectedGroupComponentsProvSquare.w-selectedGroupComponentsProvSquare.x)* paiRef.wcm) + 'px';
+              point.style.height = ((selectedGroupComponentsProvSquare.h - selectedGroupComponentsProvSquare.y)* paiRef.hcm) + 'px';
+              content.append(point);
+            } else {
+              if(selectedGroupComponents.findIndex(f => f.id == el.id) == -1){
+                selectedGroupComponents = [];
+                Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
+                  c.classList.remove('highlight');
+                  c.classList.add('NOhighlight');
+                });
+                e.target.classList.remove('NOhighlight');
+                e.target.classList.add('highlight');
+                selectComponent(paiRef.id, el);
+                const rect = el.getSR().getBoundingClientRect();
+                const mouseX = e.clientX - rect.left;
+                const mouseY = e.clientY - rect.top;
+    
+                selectedComponentAnchorMove = {
+                  x: mouseX,
+                  y: mouseY
+                };
+              }
+            }
+          } else {
+            if(content.querySelector('.flutpoint') != null){
+              
+              if(!e.target.classList.contains("flutpoint")) {
+                console.log('123');
+                content.removeChild(content.querySelector('.flutpoint'));
+                Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
+                  c.classList.remove('highlight');
+                  c.classList.add('NOhighlight');
+                });
+                selectedGroupComponents = [];
+              }
+            }
+          }
         }
       } else {
         if (currentElement == null && currentAction == null) {
@@ -1413,6 +1556,31 @@ class SHEET {
 
     content.addEventListener('mouseup', function (e) {
       if (paiRef.inClick && currentAction == 'HANDLE') {
+        //if(shiftPressed){}
+        if(content.querySelector('.selectAreaMouse') != null){
+          content.removeChild(selectAreaMouse);
+        }
+
+        if(shiftPressed != true && e.target.classList.contains("flutpoint")){
+          selectedGroupComponentsProvSquare.moving = false;
+          if(dndraw){
+            selectedGroupComponents.forEach((rdg) => {
+              rdg.setParameters(['x', 'y'], [(rdg.x + (selectedGroupComponentsProvSquare.draw.x - selectedGroupComponentsProvSquare.x)), (rdg.y + (selectedGroupComponentsProvSquare.draw.y - selectedGroupComponentsProvSquare.y))]);
+              rdg.setParameterComponent('y', (rdg.y + (selectedGroupComponentsProvSquare.draw.y - selectedGroupComponentsProvSquare.y)));
+            });
+          }
+          selectedGroupComponentsProvSquare={x: 21,y: 29,w: 0,h: 0,moving: false,draw: {x: 0,y: 0}};
+          selectedGroupComponents = [];
+          paiRef.rectConstruct = [];
+          Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
+            c.classList.remove('highlight');
+            c.classList.add('NOhighlight');
+            if(content.querySelector('.flutpoint') != null){
+              content.removeChild(content.querySelector('.flutpoint'));
+            }
+          });
+        }
+
         paiRef.inClick = false;
         selectedComponentAnchorMove = null;
         paiRef.rectConstruct = [];
@@ -1431,7 +1599,14 @@ class SHEET {
 
         let insertID = 1;
         if (paiRef.components.length > 0) {
-          insertID = Number(paiRef.components.at(-1).id.split('_').at(-1)) + 1;
+          let mid = 0;
+          paiRef.components.forEach((e) => {
+            let t = Number(e.id.split('_')[1]);
+            if(t > mid){
+              mid = t;
+            }
+          });
+          insertID = Number(mid) + 1;
         }
 
         let w = (paiRef.rectConstruct[1].x - paiRef.rectConstruct[0].x) / paiRef.wcm;
@@ -1465,16 +1640,109 @@ class SHEET {
       tip.querySelector('.coordYSheet').innerHTML = ((mouseY) / paiRef.hcm).toFixed(1);
 
       if (paiRef.inClick && currentAction == 'HANDLE' && selectedComponent.el?.id != 0 && selectedComponentAnchorMove != null) {
+        selectedGroupComponentsProvSquare.moving = false;
         let nx = (((mouseX) / paiRef.wcm) - ((selectedComponentAnchorMove.x / paiRef.wcm)));
         let ny = (((mouseY) / paiRef.hcm) - ((selectedComponentAnchorMove.y / paiRef.hcm)));
         selectedComponent.el.setParameterComponent(parseFloat(nx), 'x');
         selectedComponent.el.setParameterComponent(parseFloat(ny), 'y');
+      }
+
+      if(paiRef.inClick && currentAction == 'HANDLE' && shiftPressed == true){
+        selectedGroupComponentsProvSquare.moving = false;
+        selectAreaMouse.style.width = mouseX - paiRef.rectConstruct[0].x + 'px';
+        selectAreaMouse.style.height = mouseY - paiRef.rectConstruct[0].y + 'px';
+
+        for (const elemento of paiRef.components) {
+          const { x: elementoX, y: elementoY, width: elementoWidth, height: elementoHeight } = elemento;
+
+          // Verifica se os retângulos estão se sobrepondo
+          if (
+              paiRef.rectConstruct[0].x / paiRef.wcm < elementoX + elementoWidth &&
+              (paiRef.rectConstruct[0].x + (mouseX - paiRef.rectConstruct[0].x)) / paiRef.wcm > elementoX &&
+              paiRef.rectConstruct[0].y / paiRef.hcm < elementoY + elementoHeight &&
+              (paiRef.rectConstruct[0].y + (mouseY - paiRef.rectConstruct[0].y)) / paiRef.hcm > elementoY
+          ) {
+             if(!selectedGroupComponents.includes(elemento)) {
+              selectedGroupComponents.push(elemento);
+              elemento.selfReference[0].classList.remove('NOhighlight');
+              elemento.selfReference[0].classList.add('highlight');
+             }
+          } else {
+            elemento.selfReference[0].classList.remove('highlight');
+            elemento.selfReference[0].classList.add('NOhighlight')
+          }
+        }
+
+        selectedGroupComponentsProvSquare.x = 21;
+        selectedGroupComponentsProvSquare.y = 29;
+        selectedGroupComponentsProvSquare.w = 0;
+        selectedGroupComponentsProvSquare.h = 0;
+        selectedGroupComponents.forEach(sgc => {
+          if(sgc.x < selectedGroupComponentsProvSquare.x){
+            selectedGroupComponentsProvSquare.x = sgc.x;
+          }
+          if(sgc.y < selectedGroupComponentsProvSquare.y){
+            selectedGroupComponentsProvSquare.y = sgc.y;
+          }
+          if((sgc.x + sgc.width) > selectedGroupComponentsProvSquare.w){
+            selectedGroupComponentsProvSquare.w = (sgc.x + sgc.width);
+          }
+          if((sgc.y + sgc.height) > selectedGroupComponentsProvSquare.h){
+            selectedGroupComponentsProvSquare.h = (sgc.y + sgc.height);
+          }
+        });
+
+        
+        point.style.top = (selectedGroupComponentsProvSquare.y * paiRef.hcm)+'px';
+        point.style.left = (selectedGroupComponentsProvSquare.x* paiRef.wcm)+'px';
+        point.style.width = ((selectedGroupComponentsProvSquare.w-selectedGroupComponentsProvSquare.x)* paiRef.wcm) + 'px';
+        point.style.height = ((selectedGroupComponentsProvSquare.h - selectedGroupComponentsProvSquare.y)* paiRef.hcm) + 'px';
+        if(content.querySelector('.flutpoint') != null){
+          content.removeChild(content.querySelector('.flutpoint'));
+        }
+        content.append(point);
+      }
+
+      if(paiRef.inClick && currentAction == 'HANDLE' && shiftPressed != true && (e.target.classList.contains("flutpoint") || selectedGroupComponentsProvSquare.moving == true)){
+        selectedGroupComponentsProvSquare.moving = true;
+
+        if((parseFloat(point.style.width) / paiRef.wcm) >= ((paiRef.width - ((paiRef.margem.left + paiRef.margem.right)  / paiRef.wcm))*0.85)){
+          point.style.top = Number(mouseY - (parseFloat(point.style.height) / 2))+'px';
+        } else {
+          point.style.left = Number(mouseX - (parseFloat(point.style.width) / 2))+'px';
+          point.style.top = Number(mouseY - (parseFloat(point.style.height) / 2))+'px';
+        }
+        
+        let locdndraw = true;
+        for (const elemento of paiRef.components.filter(pec => !selectedGroupComponents.includes(pec))) {
+          const { x: elementoX, y: elementoY, width: elementoWidth, height: elementoHeight } = elemento; 
+          
+          console.log((parseFloat(point.style.width) / paiRef.wcm)+', '+(parseFloat(point.style.height) / paiRef.hcm));
+
+            if (
+              parseFloat(point.style.left) / paiRef.wcm <= elementoX + elementoWidth &&
+              (parseFloat(point.style.left) / paiRef.wcm) + (parseFloat(point.style.width) / paiRef.wcm) >= elementoX &&
+              parseFloat(point.style.top) / paiRef.hcm <= elementoY + elementoHeight &&
+              (parseFloat(point.style.top) / paiRef.hcm) + (parseFloat(point.style.height) / paiRef.hcm) >= elementoY
+            ) {
+              point.style.backgroundColor = 'rgba(255,0,0,0.15)';
+              locdndraw = false;
+              break;
+            }
+        }
+        dndraw = locdndraw;
+        if(locdndraw){
+          selectedGroupComponentsProvSquare.draw.x = parseFloat(point.style.left) / paiRef.wcm;
+          selectedGroupComponentsProvSquare.draw.y = parseFloat(point.style.top) / paiRef.hcm;
+          point.style.backgroundColor = '';
+        }
       }
     });
 
     content.addEventListener('mouseover', function (e) {
       if(paiRef.inClick) return false;
       if (currentAction == 'HANDLE') {
+        if(selectedGroupComponents.findIndex(f => f.id == e.target.getAttribute('rel')) != -1) return false;
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
           e.target.classList.add('highlight');
@@ -1487,6 +1755,7 @@ class SHEET {
     content.addEventListener('mouseout', (e) => {
       if(paiRef.inClick) return false;
       if (currentAction == 'HANDLE') {
+        if(selectedGroupComponents.findIndex(f => f.id == e.target.getAttribute('rel')) != -1) return false;
         // Verifica se o alvo do evento é um filho do paiElemento
         const isFilho = Array.from(document.querySelectorAll('.componentPDF')).some((filho) => filho.contains(e.target));
         if (isFilho) {
@@ -1641,6 +1910,8 @@ function verificarSobreposicao(components, x, y, width, height) {
           y < elementoY + elementoHeight &&
           y + height > elementoY
       ) {
+          console.log(elemento);
+          console.log(x+', '+y+', '+width+', '+height);
           return false;
       }
   }
@@ -1884,7 +2155,19 @@ function createFormFromElement(e) {
    if(value.tt?.length > 0){
     tt = value.tt;
    }
-    let inpArea = inputEscolhido(type = value.type, property = key, e, label = value.label, options = opts, iconSelect = value.icon, tutorialPass = tt);
+
+   let inpObj = {
+    type: value.type ?? '',
+    property: key ?? '',
+    el: e ?? null,
+    label: value.label ?? '',
+    options: opts ?? [],
+     iconSelect: value.icon ?? null,
+     tutorialPass: tt ?? [],
+     steps: value.step ?? 0.02
+    };
+
+    let inpArea = inputEscolhido(inpObj);
     configSheetArea.querySelector('.contentAUX').insertAdjacentElement('beforeend', inpArea);
   }
 
@@ -1926,7 +2209,7 @@ function unirPaginaAnterior(checkbox) {
 }
 
 //INPUTS FORM SWITCH
-function inputEscolhido(type, property, el, label, options = [], iconSelect = null, tutorialPass = []) {
+function inputEscolhido({type, property, el, label, options = [], iconSelect = null, tutorialPass = [], steps = 0.02}) {
 
   let tutorial = document.createElement('div');
   tutorial.setAttribute('class', 'tutorialInputUse');
@@ -1950,7 +2233,7 @@ function inputEscolhido(type, property, el, label, options = [], iconSelect = nu
     inpAreaSpan.innerHTML = label;
     let inpAreaInput = document.createElement('input');
     inpAreaInput.setAttribute('type', 'number');
-    inpAreaInput.setAttribute('step', '0.02');
+    inpAreaInput.setAttribute('step', steps);
     inpAreaInput.setAttribute('value', el[property]);
     inpAreaInput.setAttribute('rel', property);
     inpAreaInput.addEventListener('change', function (ri) {
@@ -2189,44 +2472,82 @@ window.addEventListener('keydown', function(event) {
         selectedComponent.el.rollback();
       }
   }
-});
 
-window.addEventListener('keydown', function(event) {  
   if ((event.key === 'C' || event.key === 'c') && (event.ctrlKey || event.metaKey)) {
+    if(selectedGroupComponents.length > 0){
+      cntrCGroupComponent.el = selectedGroupComponents;
+      cntrCGroupComponent.np = currentPage ?? selectedGroupComponents[0].sheet.id;
+    } else {
       if(selectedComponent.el != null){
         cntrCComponent.el = selectedComponent.el;
         cntrCComponent.np = selectedComponent.np;
       }
+    }
   }
-});
 
-window.addEventListener('keydown', function(event) {  
   if ((event.key === 'V' || event.key === 'v') && (event.ctrlKey || event.metaKey)) {
+    if(cntrCGroupComponent.el.length > 0){
+      let content = cntrCGroupComponent.np.selfReference.querySelector('.content');
+      let fp = content.querySelector('.flutpoint');
+      if(fp != null){
+        if((parseFloat(fp.style.width) / cntrCGroupComponent.np.wcm) >= ((cntrCGroupComponent.np.width - ((cntrCGroupComponent.np.margem.left + cntrCGroupComponent.np.margem.right)  / cntrCGroupComponent.np.wcm))*0.75)){
+          fp.style.top = Number((mousePositionPage.y * cntrCGroupComponent.np.hcm) - (parseFloat(fp.style.height) / 2))+'px';
+        } else {
+          fp.style.left = Number((mousePositionPage.x * cntrCGroupComponent.np.wcm) - (parseFloat(fp.style.width) / 2))+'px';
+          fp.style.top = Number((mousePositionPage.y * cntrCGroupComponent.np.hcm) - (parseFloat(fp.style.height) / 2))+'px';
+        }
+
+        let cabdrawPaste = verificarSobreposicao(cntrCGroupComponent.np.components.filter(pec => !cntrCGroupComponent.el.includes(pec)),
+        (parseFloat(fp.style.left)/cntrCGroupComponent.np.wcm), (parseFloat(fp.style.top)/cntrCGroupComponent.np.hcm),
+        (parseFloat(fp.style.width)/cntrCGroupComponent.np.wcm), (parseFloat(fp.style.height)/cntrCGroupComponent.np.hcm));
+
+        selectedGroupComponentsProvSquare.draw.x = (parseFloat(fp.style.left)/cntrCGroupComponent.np.wcm);
+        selectedGroupComponentsProvSquare.draw.y = (parseFloat(fp.style.top)/cntrCGroupComponent.np.hcm);
+
+        if(cabdrawPaste){
+          cntrCGroupComponent.el.forEach((rdg) => {
+            rdg.copyPaste(3, (rdg.x + (selectedGroupComponentsProvSquare.draw.x - selectedGroupComponentsProvSquare.x)), (rdg.y + (selectedGroupComponentsProvSquare.draw.y - selectedGroupComponentsProvSquare.y)));
+          });
+        }
+    }
+    selectedGroupComponentsProvSquare={x: 21,y: 29,w: 0,h: 0,moving: false,draw: {x: 0,y: 0}};
+    selectedGroupComponents = [];
+    cntrCGroupComponent = {np: null,el: []};
+
+    } else {
       if(cntrCComponent.el != null){
         cntrCComponent.el.copyPaste(1);
         cntrCComponent.el = null;
         cntrCComponent.np = null;
       }
+    }
   }
-});
-
-window.addEventListener('keydown', function(event) {  
   if ((event.key === 'B' || event.key === 'b') && (event.ctrlKey || event.metaKey)) {
-      if(cntrCComponent.el != null){
-        cntrCComponent.el.copyPaste(2);
-      }
+    if(cntrCComponent.el != null){
+      cntrCComponent.el.copyPaste(2);
+    }
   }
-});
-
-
-window.addEventListener('keydown', function(event) {  
   if (event.key === 'DELETE' || event.key === 'Delete') {
     if(selectedComponent.el != null){
       
     }
   }
+  if (event.key === 'Shift') {
+    shiftPressed = true;
+  }
+  if (event.key === 'Control') {
+    ctrlPressed = true;
+  }
 });
 
+window.addEventListener('keyup', function(event) { 
+  if (event.key === 'Shift') {
+    shiftPressed = false;
+  }
+  if (event.key === 'Control') {
+    ctrlPressed = false;
+  }  
+});
 
 //BTN ACTIONS 
 document.querySelector('#publish.gen').addEventListener('click', function (e) {
