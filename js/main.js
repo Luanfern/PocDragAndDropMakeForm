@@ -177,6 +177,8 @@ let defaultConfigurations = {
   }
 }
 
+let templateModelBackground = null;
+
 modalConfId = null;
 
 let shiftPressed = false;
@@ -1308,6 +1310,7 @@ class SHEET {
     })
 
     this.setSizeSheet(defaultConfigurations.zoomPctg);
+    this.setBackgroundImageTemplate();
   }
 
 
@@ -1425,6 +1428,8 @@ class SHEET {
       if (currentAction == 'HANDLE') {
         if(shiftPressed){
           selectedGroupComponents = [];
+          cntrCGroupComponent = {np: null,el: []};
+          cntrCComponent = {np: null,el: {id: null}};
           var mouseX = e.clientX - paiRef.selfReference.getBoundingClientRect().x;
           var mouseY = e.clientY - paiRef.selfReference.getBoundingClientRect().y;
           content.append(selectAreaMouse);
@@ -1446,61 +1451,25 @@ class SHEET {
             if(content.querySelector('.flutpoint') != null){
               content.removeChild(content.querySelector('.flutpoint'));
             }
-            if(ctrlPressed){
-              if(!selectedGroupComponents.includes(el)) {
-                selectedGroupComponents.push(el);
-                e.target.classList.remove('NOhighlight');
-                e.target.classList.add('highlight');
-              } else {
-                selectedGroupComponents.splice(selectedGroupComponents.findIndex(efd => efd.id == el.id), 1);
-                e.target.classList.add('NOhighlight');
-                e.target.classList.remove('highlight');
-              }
-
-              selectedGroupComponentsProvSquare.x = 21;
-              selectedGroupComponentsProvSquare.y = 29;
-              selectedGroupComponentsProvSquare.w = 0;
-              selectedGroupComponentsProvSquare.h = 0;
-              selectedGroupComponents.forEach(sgc => {
-                if(sgc.x < selectedGroupComponentsProvSquare.x){
-                  selectedGroupComponentsProvSquare.x = sgc.x;
-                }
-                if(sgc.y < selectedGroupComponentsProvSquare.y){
-                  selectedGroupComponentsProvSquare.y = sgc.y;
-                }
-                if((sgc.x + sgc.width) > selectedGroupComponentsProvSquare.w){
-                  selectedGroupComponentsProvSquare.w = (sgc.x + sgc.width);
-                }
-                if((sgc.y + sgc.height) > selectedGroupComponentsProvSquare.h){
-                  selectedGroupComponentsProvSquare.h = (sgc.y + sgc.height);
-                }
+            if(selectedGroupComponents.findIndex(f => f.id == el.id) == -1){
+              selectedGroupComponents = [];
+              cntrCGroupComponent = {np: null,el: []};
+              cntrCComponent = {np: null,el: {id: null}};
+              Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
+                c.classList.remove('highlight');
+                c.classList.add('NOhighlight');
               });
-
-              
-              point.style.top = (selectedGroupComponentsProvSquare.y * paiRef.hcm)+'px';
-              point.style.left = (selectedGroupComponentsProvSquare.x* paiRef.wcm)+'px';
-              point.style.width = ((selectedGroupComponentsProvSquare.w-selectedGroupComponentsProvSquare.x)* paiRef.wcm) + 'px';
-              point.style.height = ((selectedGroupComponentsProvSquare.h - selectedGroupComponentsProvSquare.y)* paiRef.hcm) + 'px';
-              content.append(point);
-            } else {
-              if(selectedGroupComponents.findIndex(f => f.id == el.id) == -1){
-                selectedGroupComponents = [];
-                Array.from(document.querySelectorAll('.componentPDF')).forEach(c => {
-                  c.classList.remove('highlight');
-                  c.classList.add('NOhighlight');
-                });
-                e.target.classList.remove('NOhighlight');
-                e.target.classList.add('highlight');
-                selectComponent(paiRef.id, el);
-                const rect = el.getSR().getBoundingClientRect();
-                const mouseX = e.clientX - rect.left;
-                const mouseY = e.clientY - rect.top;
-    
-                selectedComponentAnchorMove = {
-                  x: mouseX,
-                  y: mouseY
-                };
-              }
+              e.target.classList.remove('NOhighlight');
+              e.target.classList.add('highlight');
+              selectComponent(paiRef.id, el);
+              const rect = el.getSR().getBoundingClientRect();
+              const mouseX = e.clientX - rect.left;
+              const mouseY = e.clientY - rect.top;
+  
+              selectedComponentAnchorMove = {
+                x: mouseX,
+                y: mouseY
+              };
             }
           } else {
             if(content.querySelector('.flutpoint') != null){
@@ -1893,6 +1862,17 @@ class SHEET {
     return this.selfReference;
   }
 
+  setBackgroundImageTemplate(){
+    let url = templateModelBackground;
+    let content = this.getSR().querySelector('.content');
+    if(url == null){
+      content.classList.remove('backgroundSheetTemplate');
+      content.style.backgroundImage = 'none';
+    } else {
+      content.classList.add('backgroundSheetTemplate');
+      content.style.backgroundImage = url;
+    }
+  }
 }
 
 
@@ -1978,6 +1958,25 @@ btnapply.onclick = function () {
   defaultConfigurations.margens.bottom = document.getElementById('verticalMR').value;
   defaultConfigurations.margens.left = document.getElementById('horizontalME').value;
   defaultConfigurations.margens.right = document.getElementById('horizontalMD').value;
+
+  if(document.querySelector("#templatemodelbackgroundBTN").files[0] != undefined){
+    
+    const reader = new FileReader();
+    reader.onload = function(e) {
+      const url = e.target.result;
+      templateModelBackground = `url('${url}')`;
+      sheets.forEach(s => s.setBackgroundImageTemplate());
+    };
+    reader.readAsDataURL(document.querySelector("#templatemodelbackgroundBTN").files[0]);
+
+  } else if(document.querySelector("#templatemodelbackgroundTEXT").value != ''||document.querySelector("#templatemodelbackgroundTEXT").value != null || document.querySelector("#templatemodelbackgroundTEXT").value != undefined) {
+    const url = document.querySelector("#templatemodelbackgroundTEXT").value;
+    templateModelBackground = `url('${url}')`;
+    sheets.forEach(s => s.setBackgroundImageTemplate());
+  } else {
+    templateModelBackground = null;
+    sheets.forEach(s => s.setBackgroundImageTemplate());
+  }
 
 }
 window.onclick = function (event) {
@@ -2515,15 +2514,15 @@ window.addEventListener('keydown', function(event) {
     cntrCGroupComponent = {np: null,el: []};
 
     } else {
-      if(cntrCComponent.el != null){
+      if(cntrCComponent.el.id != null){
         cntrCComponent.el.copyPaste(1);
-        cntrCComponent.el = null;
+        cntrCComponent.el = {id: null};
         cntrCComponent.np = null;
       }
     }
   }
   if ((event.key === 'B' || event.key === 'b') && (event.ctrlKey || event.metaKey)) {
-    if(cntrCComponent.el != null){
+    if(cntrCComponent.el.id != null){
       cntrCComponent.el.copyPaste(2);
     }
   }

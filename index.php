@@ -123,6 +123,15 @@ if(isset($_GET['FILE']) && !empty($_GET['FILE'])){
         </div>
         <div class="right">
           <div class="sectionConfig">
+            <div class="templatemodelbackground separatorConfigItems">
+              <label for="templatemodelbackgroundBTN">
+                <b>Inserir template Modelo no fundo:</b>
+                <div style="font-size: 9px; margin:5px; padding: 2px;"><p>Inserir uma imagem template. É possível alterar a qualquer momento.</p><p>A imagem template não será salva. Carregue novamente sempre que precisar.</p></div>
+              </label>
+              <input class="btnConfigModal" type="file" name="templatemodelbackgroundBTN" id="templatemodelbackgroundBTN">
+              <p style="font-size: 11px; margin:5px;">OU</p>
+              <input  style="width: 100%;" type="text" name="templatemodelbackgroundTEXT" id="templatemodelbackgroundTEXT" placeholder="URL do template aqui!">
+            </div>
           <p style="font-size: 11px; color:red;">Mais opções em Breve...</p>
           </div>
         </div>

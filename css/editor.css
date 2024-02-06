@@ -88,8 +88,18 @@
   justify-content: end;
 }
 
+.separatorConfigItems{
+  margin-bottom: 15px;
+  border-bottom: 1px solid #444;
+  padding-bottom: 15px;
+}
 
-.btnMenu{
+.backgroundSheetTemplate{
+  background-size: cover;
+  background-position: center;
+}
+
+.btnMenu, .btnConfigModal{
   font-size: 14px;
   font-weight: bold;
   color: white;
@@ -101,7 +111,7 @@
   cursor: pointer;
 }
 
-.btnMenu:hover{
+.btnMenu:hover, .btnConfigModal:hover{
   background-color: #777;
 }
 
