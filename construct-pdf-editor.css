@@ -1,0 +1,962 @@
+//EDITOR:
+
+*{
+    box-sizing: border-box;
+    margin: 0 auto;
+    font-family: 'Roboto', sans-serif;
+  }
+  
+  *::-webkit-scrollbar {
+    width: 3px;
+  }
+  
+  *::-webkit-scrollbar-track {
+    background: none;
+  }
+  
+  *::-webkit-scrollbar-thumb {
+    background-color: #888;
+    border-radius: 1px;
+  }
+  
+  #editor{
+    height: 100%;
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: absolute;
+    z-index: 2;
+  }
+  
+  .title{
+    margin: 10px 0 20px 0;
+    font-size: 20px;
+  }
+  
+  .subtitle{
+    font-size: 16px;
+    font-weight: bold;
+  }
+  
+  #menu{
+    height: 50px !important;
+    width: 100%;
+    padding: 0 15px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    right: 0;
+    flex-grow: 1;
+    z-index: 152;
+    background-color: black;
+    position: fixed;
+    top: 0; 
+  }
+  
+  @media only screen and (min-width: 950px) {
+    #menu .left {
+      flex-grow: 2;
+    }
+  }
+  
+  #menu .left{
+    flex-grow: 3;
+    display: flex;
+    align-items: center;
+    justify-content: start;
+  }
+  
+  #menu .center{
+    flex-grow: 1;
+    display: flex;
+    align-items: center;
+    justify-content: space-around;
+  }
+  
+  #menu .center input{
+    color: white;
+    background-color: black;
+    border-radius: 0;
+    border: solid;
+    border-width: 0 0 1px 0;
+    border-color: whtie;
+  }
+  
+  #menu .right{
+    flex-grow: 2;
+    display: flex;
+    align-items: center;
+    justify-content: end;
+  }
+  
+  .separatorConfigItems{
+    margin-bottom: 15px;
+    border-bottom: 1px solid #444;
+    padding-bottom: 15px;
+  }
+  
+  .backgroundSheetTemplate{
+    background-size: cover;
+    background-position: center;
+  }
+  
+  .btnMenu, .btnConfigModal{
+    font-size: 14px;
+    font-weight: bold;
+    color: white;
+    padding: 5px 10px;
+    transition: 100ms;
+    margin: 0 5px;
+    border-radius: 4px;
+    background-color: #444;
+    cursor: pointer;
+  }
+  
+  .btnMenu:hover, .btnConfigModal:hover{
+    background-color: #777;
+  }
+  
+  .lineElementClick{
+    display: flex;
+  }
+  
+  #currentElement{
+    margin-left: 0 !important;
+  }
+  
+  #dropDownElements {
+    position: relative;
+    display: inline-block;
+    margin: 0;
+  }
+  
+  .myDropDownElementsContent {
+    display: none;
+    position: fixed;
+    min-width: 130px;
+    overflow: auto;
+    background-color: black;
+    margin-top: 6px;
+    border-radius: 5px;
+    border: 1px solid #999;
+    box-shadow: 0px 8px 16px 0px rgba(0,0,0,0.2);
+    z-index: 3;
+  }
+  
+  .myDropDownElementsContent .el {
+    padding: 5px 2px;
+    text-decoration: none;
+    display: block;
+    color: white;
+    font-size: 11px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    text-transform: uppercase;
+  
+  }
+  
+  #dropDownElements .el:hover {
+    background-color: #444;
+    font-weight: bold;
+  }
+  
+  
+  
+  #dropDownElements .el .icon{
+  width: 25px;
+  height: 25px;
+  background-color: #888;
+  font-size: 20px;
+  margin:0;
+  text-align: center;
+  }
+  
+  .show {display: block !important;}
+  
+  #viewManager{
+    margin-top:50px;
+    height: 100%;
+    display: block;
+    margin-left: auto;
+    margin-right: auto;
+    right: 0;
+    flex-grow: 1;
+    overflow: auto;
+    overflow-x: hidden;
+  }
+  
+  .sheet{
+    user-select: none;
+    margin-top: 30px;
+    margin-bottom: 10px;
+    width: calc(2.65*210px);
+    height: calc(2.65*297px);
+    background-color: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
+    position: relative;
+    cursor: crosshair;
+  }
+  
+  .sheet.gragItems{
+    cursor: grab !important;
+  }
+  
+  .headerTopAux .currentElement{
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  
+  #configSheet{
+    width: 210px;
+    background-color: red;
+    position: fixed;
+    z-index: 150;
+    right: 0;
+    background: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
+    height: 100%;
+    padding: 10px;
+    overflow-y: auto;
+    transition: 100ms;
+  }
+  
+  #listElements{
+    width: 210px;
+    background-color: red;
+    position: fixed;
+    z-index: 150;
+    left: 0;
+    background: white;
+    padding: 10px;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
+    height: 100%;
+    overflow-y: auto;
+    transition: 100ms;
+  
+  }
+  
+  #listSheets{
+    width: 140px;
+    position: fixed;
+    z-index: 151;
+    left: 0;
+    background: white;
+    padding: 10px;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
+    height: 100%;
+    overflow-y: auto;
+    transition: 100ms;
+    display: none;
+  }
+  
+  .excluirPagina{
+    transition: 100ms;
+    background-color: none;
+    padding: 8px 12px;
+    font-weight: bold;
+    font-size: 12px;
+    color: black;
+  }
+  
+  .excluirPagina:hover{
+    background-color: red;
+    color: white;
+    border-radius: 3px;
+  }
+  
+  #zoomActions .controls{
+    width: 70px;
+    position: fixed;
+    z-index: 151;
+    bottom: 20px;
+    left: calc(50% - 35px);
+    background: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.35);
+    height: 55px;
+  }
+  
+  #zoomActions .zoomValue{
+    border-top: 1px solid rgba(0,0,0,0.35);
+    padding-left: 5px;
+    padding-right: 5px;
+    overflow: hidden;
+    padding-top:2px;
+    width: 50px;
+    position: fixed;
+    z-index: 150;
+    bottom: 45px;
+    left: calc(50% - 25px);
+    font-size: 13px;
+    font-weight: bold;
+    background: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.35);
+    height: 30px;
+    border-radius: 5px;
+  
+  
+  }
+  
+  #zoomActions .controls{
+    border-top: 1px solid rgba(0,0,0,0.35);
+    width: 70px;
+    border-radius: 5px;
+    background: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.35);
+    height: 35px;
+    display: flex;
+    justify-content: space-between;
+    font-size: 14px;
+    overflow: hidden;
+  }
+  
+  #zoomActions .controls div{
+    padding:5px;
+    width:35px;
+    height:35px;
+    display: flex;
+    text-align: center;
+  }
+  
+  #zoomActions .controls div:hover{
+    background-color: rgba(0,0,0,0.15);
+    font-size:16px;
+    cursor: pointer;
+  }
+  
+  .minisheet .contentMiniSheet{
+    color: black;
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    align-items: center;
+    height: calc(100% - 30px);
+  }
+  
+  .minisheet{
+    margin-top: 15px;
+    width: calc(210px/2.65);
+    height: calc(297px/2.65);
+    background-color: white;
+    box-shadow: 2px 5px 5px rgba(0,0,0,0.2);
+    position: relative;
+    border: 1px solid rgba(0,0,0,0.1);
+    font-weight: bold;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    align-items: center;
+  }
+  
+  .minisheet.miniSheetActive{
+    background-color: rgba(0,0,0,0.2);
+    width: calc(210px/2.5);
+    height: calc(297px/2.5);
+    
+  }
+  
+  .headerTopAux{
+    font-weight: bold;
+    font-size: 14px;
+    display: flex;
+    flex-direction: row-reverse;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #333;
+  }
+  
+  .closeArea{
+    line-height: 30px;
+    text-align: center;
+    font-size: 24px;
+    width:30px;
+    height: 30px;
+    color:black;
+  }
+  
+  .closeArea:hover{
+    color: #666;
+    font-size: 26px;
+    cursor: pointer;
+  }
+  
+  .openArea{
+    display: none;
+    line-height: 30px;
+    text-align: center;
+    font-size: 24px;
+    width:30px;
+    height: 30px;
+    color:black;
+  }
+  
+  .openArea:hover{
+    color: #666;
+    font-size: 26px;
+  
+  }
+  
+  .contentAUX{
+    margin: 5px 0;
+    display: flex;
+    flex-direction: column;
+    overflow: scroll;
+    margin-bottom: 30px;  
+  }
+  
+  .pageAccordeon{
+    width: 100%;
+  }
+  
+  
+  .pageButtonAccordeon{
+    margin-bottom: 2px;
+    background-color: #eee;
+    color: #444;
+    cursor: pointer;
+    padding: 12px;
+    width: 100%;
+    border: none;
+    text-align: left;
+    outline: none;
+    font-size: 13px;
+    font-weight: bold;
+    transition: 150ms;
+  }
+  
+  .pageButtonAccordeon.active, .pageButtonAccordeon:hover {
+    background-color: #ccc;
+  }
+  
+  .pagePanelAcordeon {
+    padding: 2px 5px;
+    height: 0;
+    display: flex;
+    flex-direction: column;
+    background-color: white;
+    border-bottom: 1px solid #999;
+    overflow: hidden;
+  }
+  
+  .pagePanelAcordeon.active{
+    height: auto;
+    
+  }
+  
+  .myElement{
+    width: 100%;
+    height: 30px;
+    background-color: rgba(0,0,0,0.05);
+    position: relative;
+    //overflow: hidden;
+    margin-bottom: 5px;
+    display: flex;
+    justify-content: space-between;
+  }
+  
+  .myElement .icon{
+    //float: left;
+    width: 30px;
+    height: 30px;
+    background-color: rgba(0,0,0,0.1);
+    /* margin-right: 15px; */
+  }
+  
+  .myElement .name{
+    font-size:9px;
+    flex-grow: 1;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis; 
+    padding: 0 7px;
+    text-align: center;
+    line-height: 28px;
+    max-width: 95px !important;
+  }
+  
+  .myElement .layerControlComponent{
+    //float: right;
+    border: 1px solid rgba(0,0,0,0.1);
+    width: 40px;
+    display: flex;
+    height: 30px;
+    overflow: hidden;
+  }
+  
+  .myElement .layerControlComponent .up, .myElement .layerControlComponent .down{
+    width: 19px;
+    font-size: 18px;
+    height: 100%;
+    line-height: 25px;
+    text-align: center;
+  }
+  
+  .myElement .layerControlComponent .up:hover, .myElement .layerControlComponent .down:hover{
+    background-color:rgba(0,0,0,0.1);
+    cursor: pointer;
+  }
+  
+  .myElement.active{
+    background-color: rgba(0,0,0,0.20);
+  }
+  
+  .confShow{
+    height: 100%;
+    width: 13px;
+    background-color: #333;
+    transition: 150ms;
+    margin-left: 3px;
+    border-bottom-left-radius: 3px;
+    border-top-left-radius:3px;
+    line-height: 30px;
+    color: white;
+    font-size: 10px;
+    text-align: center;
+    display: flex;
+  }
+  
+  .confShow .cnfCompContent{
+    width: calc(100% - 15px);
+    display: none;
+    justify-content: space-around;
+    font-size: 12px;
+    padding: 3px;
+    line-height: 22px;
+  }
+  
+  .cnfCompContent .deleteComp{
+    transition: 100ms;
+    background-color: none;
+    padding: 0 6px;
+    font-weight: bold;
+  }
+  
+  .cnfCompContent .deleteComp:hover{
+    background-color: red;
+    border-radius: 3px;
+  }
+  
+  .cnfCompContent .configComp{
+    transition: 100ms;
+    background-color: none;
+    padding: 0 6px;
+    font-weight: bold;
+    font-size: 11px;
+  }
+  
+  .cnfCompContent .configComp:hover{
+    background-color: white;
+    color: black;
+    border-radius: 3px;
+  }
+  
+  .confShow:hover{
+    width: 15px;
+    background-color: #222;
+  }
+  
+  .confShow.active{
+    position: absolute;
+    width: 100%;
+    z-index: 2;
+  }
+  
+  .confShow.active .cnfCompContent{
+    display: flex;
+  }
+  
+  .avaiableElements{
+    margin-bottom: 8px;
+    width: 100%;
+    height: 65px;
+    border: 1px solid #999;
+    border-radius: 7px;
+    display: flex;
+    align-items: center;
+    justify-content: space-evenly;
+    font-size: 13px;
+    text-transform: uppercase;
+  
+  }
+  
+  .avaiableElements .icon{
+    width: 45px;
+    height: 45px;
+    background-color: grey;
+    font-size: 45px;
+    text-align: center;
+  }
+  
+  .avaiableElements:hover{
+    border: 1px solid #333;
+    font-size: 13px;
+    font-weight: bold;
+  }
+  
+  .content{
+    width: 100%;
+    height: 100%;
+  }
+  
+  .selectAreaMouse, .flutpoint{
+    position: absolute;
+    background-color: rgba(0,0,0,0.07);
+    border: 0.5px dashed black;
+    z-index:11;
+  }
+  
+  .mh{
+    width: 1px;
+    background-color: rgba(0,0,0,0.2);
+    height:100%;
+    position: absolute;
+    z-index: 12;
+  }
+  
+  .mv{
+    width: 100%;
+    background-color: rgba(0,0,0,0.2);
+    height:1px;
+    position: absolute;
+    z-index: 12;
+  }
+  
+  .componentPDF{
+    position: absolute;
+    margin: 0;
+    z-index: 1;
+  }
+  
+  .componentPDF.NOhighlight{
+    border: 1px dashed rgba(119, 119, 119, 0.55) !important;
+    z-index: 1;
+    opacity: 0.6;
+  }
+  
+  .componentPDF.highlight{
+    border: 1px dashed #777 !important;
+    z-index: 10;
+  }
+  
+  .componentPDF.highlightMoving{
+    border: 1px solid #0050CB;
+    z-index: 10;
+  }
+  
+  .linegroup{
+    display: flex;
+  }
+  
+  .dot{
+    background-color: black;
+    width: 70px;
+    height: 25px;
+    font-size: 12px;
+    color: white;
+    position: absolute;
+    border-radius: 2px;
+  }
+  
+  .cmShow{
+  
+    color: grey;
+    font-size: 12px;
+    position: absolute;
+    
+  }
+  
+  
+  #backgroundManager{
+    position: absolute;
+    z-index: 1;
+    background-color: #F0F0F0;
+    width: 100%;
+    height: 100%;
+  }
+  
+  .addelementTip{
+    position: absolute;
+    width: 115px;
+    height: 18px;
+    top: -20px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    overflow: hidden;
+  }
+  
+  .addelementTip.right{
+    right: 0px;
+  }
+  
+  .classificacaoSheet{
+    position: absolute;
+    width: 130px;
+    height: 18px;
+    top: -20px;
+    right: 0px;
+    background-color: #f0f0f0;
+    border: 1px solid #ccc;
+    padding: 2px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: center;
+    font-size: 8px;
+    overflow: hidden;
+  }
+  
+  
+  .addelementTip div{
+    margin:1px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  
+  .nosheetsExist{
+    display: flex;
+    flex-direction: column;
+    width: 200px;
+    align-items: center;
+    justify-content: center;
+    height: 300px;
+    opacity: 0.5;
+  }
+  
+  .nosheetsExist p{
+    margin-bottom: 10px;
+  }
+
+
+
+
+
+
+
+
+
+
+//INPUTS:
+
+.inpConfig{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start; 
+    margin: 8px 5px 5px 5px;
+    border: 1px solid #777;
+    border-radius: 4px;
+    padding:4px;
+  }
+  
+  .inpConfig span{
+    width:100%;
+    margin-bottom: 2px;
+    font-size: 12px;
+    font-weight: bold;
+    text-transform: uppercase;
+  }
+  
+  .inpConfig input{
+    width:100%;
+    font-size: 12px;
+  }
+
+.inpConfig .listagemImages{
+    height: 220px;
+    display: flex;
+    flex-wrap: wrap;
+    overflow: scroll;
+}
+
+.inpConfig .listagemImages img{
+    height: 68px;
+    width: calc(50% - 2px);
+    box-sizing: border-box;
+    border: 1px solid #ccc;
+    margin: 1px;
+  }
+
+.tutorialInputUse{
+    trasition: 100ms;
+    display: none;
+}
+
+.inpConfig:hover .tutorialInputUse{
+    display: block;
+}
+
+.tutorialInputUse ul{
+    margin-top: 5px;
+    padding: 0;
+}
+
+.tutorialInputUse ul li{
+    font-size: 11px;
+}
+
+
+
+
+
+
+
+//MODAL:
+
+/* The Modal (background) */
+.modal {
+    display: none; /* Hidden by default */
+    position: fixed; /* Stay in place */
+    z-index: 50; /* Sit on top */
+    left: 0;
+    top: 0;
+    width: 100%; /* Full width */
+    height: 100%; /* Full height */
+    overflow: auto; /* Enable scroll if needed */
+    background-color: rgb(0,0,0); /* Fallback color */
+    background-color: rgba(0,0,0,0.4); /* Black w/ opacity */
+  }
+  
+  /* Modal Content/Box */
+  .modal-content {
+    background-color: #fefefe;
+    margin: 15% auto; /* 15% from the top and centered */
+    padding: 5px;
+    border: 1px solid #888;
+    border-radius: 5px;
+    width: 80%; /* Could be more or less, depending on screen size */
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
+  }
+  
+  /* The Close Button */
+  .close {
+    color: grey;
+    float: right;
+    font-size: 20px;
+    font-weight: bold;
+    width: 15px;
+    margin: 0;
+  }
+  
+  .close:hover,
+  .close:focus {
+    color: black;
+    text-decoration: none;
+    cursor: pointer;
+  }
+
+  .modal-header{
+    width: 100%;
+    display: flex;
+    justify-content: space-between;
+  }
+
+  .btnapply{
+    margin-top: 20px;
+    height: 30px;
+    width:70px;
+    line-height: 30px;
+    text-align: center;
+    border: 1px solid #888;
+    border-radius: 5px;
+    font-weight: bold;
+    transition: 100ms;
+  }
+
+  .btnapply:hover{
+    color: white;
+    background-color: #778;
+  }
+
+  .inp{
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: flex-start; 
+    margin: 5px 0;
+  }
+
+  .inp span{
+    width:100%;
+    font-size: 12px;
+  }
+
+.configsContents{
+  width: 100%;
+  display:flex;
+  justify-content:space-around;
+}
+
+.configsContents .left{
+  width: 50%;
+  border-right: 1px solid #555;
+}
+
+.configsContents .right{
+  width: 50%;
+}
+
+.configsContents .right .sectionConfig, .configsContents .left .sectionConfig{
+  border-top: 1px solid #333;
+  padding: 5px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-direction: column;
+} 
+
+.subtitle{
+  margin-left:20px;
+  width: calc(100% - 20px);
+}
+
+
+
+
+
+
+
+
+
+
+
+//OVERLAY:
+
+.overlay {
+    display: none;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.3);
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+  }
+  
+  .loader {
+    border: 8px solid #f3f3f3;
+    border-top: 8px solid #888;
+    border-radius: 50%;
+    width: 50px;
+    height: 50px;
+    animation: spin 1s linear infinite;
+  }
+  
+  @keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+  }
