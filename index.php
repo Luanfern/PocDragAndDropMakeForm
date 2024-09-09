@@ -33,17 +33,13 @@ if(isset($_GET['FILE']) && !empty($_GET['FILE'])){
         <div id="pagesList" class="btnMenu">Páginas</div>
         <di id="dropDownElements">
           <div class="lineElementClick">
-            <div id="elements" class="btnMenu" onclick="elementsDropDown()">Elementos &#8595;</div>
+            <div id="elements" class="btnMenu">Elementos &#8595;</div>
             <div id="currentElement" class="btnMenu"> - - </div>
           </div>
           <div id="myDropDownElements" class="myDropDownElementsContent">
           </div>
         </di>
         <div id="handleElements" class="btnMenu">&#128432;</div>
-      </div>
-      <div class="center">
-        <input type="text" value="PDFDIRECTA">
-        <div id="salvarNome" class="btnMenu">&#9998;</div>
       </div>
       <div class="right">
         <div id="newPage" class="btnMenu">&#43; Página</div>
